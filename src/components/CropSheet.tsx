@@ -114,10 +114,26 @@ export function CropSheet({ image, sideLabel, onConfirm, onCancel }: CropSheetPr
     if (rect.width > 0) setDisplayScale(loaded.canvas.width / rect.width)
   }, [loaded])
 
+  /*
+   * La misura va ripetuta a ogni cambio di dimensione, non fatta una volta
+   * sola: al primo passaggio l'immagine non è ancora stata disegnata e il
+   * riquadro non ha la sua altezza definitiva. Misurando solo lì, la scala
+   * resta 1 e i pomelli vengono disegnati in unità dell'immagine invece che in
+   * pixel schermo — su una foto da 12 megapixel diventano puntini di pochi
+   * pixel, impossibili da afferrare col dito. Su un telefono nulla scatena poi
+   * un `resize` che rimedi.
+   */
   useLayoutEffect(() => {
+    const svg = svgRef.current
+    if (!svg) return
     measure()
+    const observer = new ResizeObserver(() => measure())
+    observer.observe(svg)
     window.addEventListener('resize', measure)
-    return () => window.removeEventListener('resize', measure)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', measure)
+    }
   }, [measure])
 
   /* ------------------------------ trascinamento -------------------------- */
@@ -214,7 +230,9 @@ export function CropSheet({ image, sideLabel, onConfirm, onCancel }: CropSheetPr
               ).toFixed(4)}))`,
             }}
           >
-            {preview && <img src={preview} alt={`Ritaglio ${sideLabel}`} />}
+            {preview && (
+              <img src={preview} alt={`Ritaglio ${sideLabel}`} onLoad={measure} />
+            )}
             <svg
               ref={svgRef}
               className="crop-overlay"

@@ -36,8 +36,15 @@ const DETECT_SIZE = 480
 const THETA_STEP = 1
 /** Quanto una retta può discostarsi da orizzontale/verticale per essere un lato. */
 const ANGLE_TOLERANCE = 32
-/** Frazione dell'area dell'immagine sotto la quale il quadrilatero è implausibile. */
-const MIN_AREA_RATIO = 0.2
+/**
+ * Frazione minima del fotogramma occupata dal documento.
+ *
+ * Tenerla alta sembra prudente e invece disattiva la funzione: fotografando una
+ * tessera a distanza comoda questa occupa il 10-15% dell'inquadratura, non il
+ * 20-30%. La precisione si difende con la verifica del contrasto lungo i bordi,
+ * non stringendo questa soglia.
+ */
+const MIN_AREA_RATIO = 0.05
 
 /* ------------------------------ pre-elaborazione ----------------------------- */
 
@@ -226,7 +233,9 @@ function bestPair(
   horizontal: boolean,
 ): [Line, Line] | null {
   const span = horizontal ? height : width
-  const minSeparation = span * 0.35
+  // Basta che i due lati opposti non siano lo stesso bordo: pretendere un terzo
+  // dell'inquadratura escludeva ogni documento non a tutto schermo.
+  const minSeparation = span * 0.12
   let best: [Line, Line] | null = null
   let bestScore = -1
 
@@ -323,7 +332,8 @@ export function detectDocument(source: HTMLCanvasElement): DetectionResult | nul
   if (!ctx) return null
   ctx.drawImage(source, 0, 0, width, height)
 
-  const edges = sobel(blur(toGray(small)))
+  const gray = blur(toGray(small))
+  const edges = sobel(gray)
   const lines = houghLines(edges)
   if (lines.length < 4) return null
 
@@ -371,8 +381,20 @@ export function detectDocument(source: HTMLCanvasElement): DetectionResult | nul
 
   const diagonal = Math.hypot(width, height)
   for (let i = 0; i < 4; i++) {
-    if (distance(quadSmall[i], quadSmall[(i + 1) % 4]) < diagonal * 0.14) return null
+    if (distance(quadSmall[i], quadSmall[(i + 1) % 4]) < diagonal * 0.06) return null
   }
+
+  // Un documento ha proporzioni ragionevoli: scarta strisce e schegge.
+  const latoA = distance(quadSmall[0], quadSmall[1])
+  const latoB = distance(quadSmall[1], quadSmall[2])
+  const proporzione = Math.max(latoA, latoB) / Math.max(1, Math.min(latoA, latoB))
+  if (proporzione > 3.2) return null
+
+  // Verifica decisiva: lungo il bordo il quadrilatero deve separare due zone di
+  // luminosità diversa. È ciò che distingue il contorno di un documento da
+  // quattro rette qualunque trovate nelle venature del tavolo, e permette di
+  // tenere le soglie qui sopra larghe senza inventare rilevamenti.
+  if (!hasBorderContrast(gray, quadSmall)) return null
 
   // Inclinazione del lato superiore rispetto all'orizzontale.
   const topEdge = { x: quadSmall[1].x - quadSmall[0].x, y: quadSmall[1].y - quadSmall[0].y }
@@ -385,6 +407,67 @@ export function detectDocument(source: HTMLCanvasElement): DetectionResult | nul
   })) as Quad
 
   return { quad, skewDegrees, coverage }
+}
+
+/**
+ * Confronta la luminosità appena dentro e appena fuori ogni lato.
+ *
+ * Campiona punti lungo il perimetro e guarda 4 pixel verso l'interno e 4 verso
+ * l'esterno lungo la normale. Se almeno tre lati su quattro mostrano un salto
+ * netto, il quadrilatero poggia su un bordo vero.
+ */
+function hasBorderContrast(gray: Gray, quad: Quad): boolean {
+  const { data, width, height } = gray
+  const at = (x: number, y: number): number | null => {
+    const px = Math.round(x)
+    const py = Math.round(y)
+    if (px < 0 || py < 0 || px >= width || py >= height) return null
+    return data[py * width + px]
+  }
+
+  const centro = {
+    x: (quad[0].x + quad[1].x + quad[2].x + quad[3].x) / 4,
+    y: (quad[0].y + quad[1].y + quad[2].y + quad[3].y) / 4,
+  }
+  const OFFSET = 4
+  const CAMPIONI = 12
+  const SALTO_MINIMO = 10
+
+  let latiConvincenti = 0
+  for (let lato = 0; lato < 4; lato++) {
+    const a = quad[lato]
+    const b = quad[(lato + 1) % 4]
+    const lunghezza = Math.hypot(b.x - a.x, b.y - a.y)
+    if (lunghezza < 1) continue
+    // Normale al lato, orientata verso l'esterno.
+    let nx = -(b.y - a.y) / lunghezza
+    let ny = (b.x - a.x) / lunghezza
+    const medio = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
+    if ((medio.x + nx - centro.x) ** 2 + (medio.y + ny - centro.y) ** 2 <
+        (medio.x - centro.x) ** 2 + (medio.y - centro.y) ** 2) {
+      nx = -nx
+      ny = -ny
+    }
+
+    let dentro = 0
+    let fuori = 0
+    let validi = 0
+    for (let i = 1; i <= CAMPIONI; i++) {
+      const t = i / (CAMPIONI + 1)
+      const px = a.x + (b.x - a.x) * t
+      const py = a.y + (b.y - a.y) * t
+      const d = at(px - nx * OFFSET, py - ny * OFFSET)
+      const f = at(px + nx * OFFSET, py + ny * OFFSET)
+      if (d === null || f === null) continue
+      dentro += d
+      fuori += f
+      validi++
+    }
+    if (validi >= CAMPIONI / 2 && Math.abs(dentro / validi - fuori / validi) >= SALTO_MINIMO) {
+      latiConvincenti++
+    }
+  }
+  return latiConvincenti >= 3
 }
 
 function clamp(value: number, min: number, max: number): number {
