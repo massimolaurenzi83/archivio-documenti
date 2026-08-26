@@ -124,8 +124,12 @@ Una volta aperta l'app, installala: *Condividi → Aggiungi a Home* su iOS,
 ## Pubblicazione su GitHub Pages
 
 Il workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
-compila e pubblica automaticamente. Una volta sola, nelle impostazioni del
-repository: **Settings → Pages → Source: GitHub Actions**.
+compila e pubblica automaticamente a ogni push su `main`. **Non serve
+configurare nulla a mano**: il workflow attiva Pages da sé al primo giro
+(`configure-pages` con `enablement: true`).
+
+Se preferisci farlo prima tu, la voce è in **Settings → Pages → Source: GitHub
+Actions** — ma è facoltativa.
 
 Il workflow imposta da sé la `base` corretta di Vite in funzione del nome del
 repository, quindi non c'è nulla da configurare a mano.

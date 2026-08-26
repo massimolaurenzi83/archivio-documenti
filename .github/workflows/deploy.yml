@@ -26,7 +26,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - run: npm ci
@@ -41,7 +41,13 @@ jobs:
         env:
           VITE_BASE: /${{ github.event.repository.name }}/
 
+      # `enablement: true` fa attivare Pages all'azione stessa, tramite API.
+      # Senza, il primo deploy fallisce con "Get Pages site failed: Not Found"
+      # finche' qualcuno non imposta a mano Settings -> Pages -> GitHub Actions:
+      # un passo invisibile che chiunque cloni il repository sbatterebbe contro.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
