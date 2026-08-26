@@ -35,6 +35,9 @@ interface Loaded {
 /** Raggio dei pomelli in pixel CSS: sotto i 12 px diventano impossibili col pollice. */
 const HANDLE_CSS_RADIUS = 13
 
+/** Altezza massima dell'anteprima: il resto dello schermo serve ai pulsanti. */
+const MAX_STAGE_HEIGHT = '44dvh'
+
 export function CropSheet({ image, sideLabel, onConfirm, onCancel }: CropSheetProps) {
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [quad, setQuad] = useState<Quad | null>(null)
@@ -179,12 +182,26 @@ export function CropSheet({ image, sideLabel, onConfirm, onCancel }: CropSheetPr
           <p className="sheet-body">
             {loaded.detected
               ? Math.abs(loaded.skew) >= 1
-                ? `Bordo rilevato, inclinazione ${Math.abs(loaded.skew).toFixed(0)}°. Trascina gli angoli se serve correggere.`
-                : 'Bordo rilevato. Trascina gli angoli se serve correggere.'
-              : 'Bordo non rilevato automaticamente: trascina i quattro angoli sul documento.'}
+                ? `Bordo rilevato, inclinazione ${Math.abs(loaded.skew).toFixed(0)}°. Correggi gli angoli se serve, poi premi «Ritaglia e raddrizza».`
+                : 'Bordo rilevato. Correggi gli angoli se serve, poi premi «Ritaglia e raddrizza».'
+              : 'Bordo non rilevato: trascina i quattro angoli sui vertici del documento, poi premi «Ritaglia e raddrizza».'}
           </p>
 
-          <div className="crop-stage">
+          {/*
+            Il riquadro non deve superare in altezza una frazione dello schermo,
+            altrimenti su una foto verticale i pulsanti finiscono sotto il bordo
+            e l'azione principale sembra non esistere. Il limite si esprime sulla
+            larghezza, ricavandolo dall'aspetto: così l'immagine resta a
+            larghezza piena del riquadro e la sovrapposizione SVG le combacia.
+          */}
+          <div
+            className="crop-stage"
+            style={{
+              maxWidth: `min(100%, calc(${MAX_STAGE_HEIGHT} * ${(
+                loaded.canvas.width / loaded.canvas.height
+              ).toFixed(4)}))`,
+            }}
+          >
             {previewUrl.current && <img src={previewUrl.current} alt={`Ritaglio ${sideLabel}`} />}
             <svg
               ref={svgRef}
@@ -260,7 +277,7 @@ export function CropSheet({ image, sideLabel, onConfirm, onCancel }: CropSheetPr
             </p>
           )}
 
-          <div className="stack-sm">
+          <div className="sticky-actions">
             <button
               type="button"
               className="btn btn-primary btn-block"
