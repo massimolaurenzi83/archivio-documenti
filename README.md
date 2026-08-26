@@ -13,6 +13,12 @@ tuo archivio nasce vuoto sul tuo telefono o sul tuo computer e non esce da lì.
 
 - **Fronte e retro** di ogni documento, acquisiti dalla fotocamera con cornice
   guida oppure scegliendo un file (immagine o PDF) già sul dispositivo.
+- **Ritaglio e raddrizzamento automatici**: l'app trova il bordo del documento
+  nella foto e ne corregge la prospettiva. Su una foto inclinata di 10° la
+  differenza misurata è netta — 8 campi estratti invece di 4, MRZ riconosciuta
+  invece che illeggibile — perché il riconoscimento della banda MRZ presuppone
+  righe orizzontali. Il bordo proposto è correggibile trascinando i quattro
+  angoli, e si può sempre tenere l'immagine intera.
 - **Riconoscimento automatico dei dati** (OCR) eseguito sul dispositivo: nome,
   cognome, codice fiscale, numero documento, date di nascita/rilascio/scadenza,
   indirizzo. Ogni campo ha il suo pulsante *copia*, per incollare il codice
@@ -117,6 +123,7 @@ src/
     archivio.ts    servizio centrale: stato, DEK in memoria, CRUD
     db.ts          IndexedDB — solo record cifrati
     ocr.ts         Tesseract.js locale, pre-elaborazione immagine, passata MRZ
+    scan.ts        rilevamento del bordo (Sobel + Hough) e raddrizzamento
     mrz.ts         parser MRZ TD1/TD2/TD3 con cifre di controllo
     extract.ts     estrazione campi da documenti italiani (con validazione CF)
     backup.ts      contenitore .archbk cifrato

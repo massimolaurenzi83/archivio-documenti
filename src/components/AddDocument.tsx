@@ -16,6 +16,7 @@ import { suggestedTitle } from '../lib/format'
 import type { AssetRef, CategoryId, ExtractedField, Side, ArchivioDocument } from '../types'
 import { useArchivio } from '../state/ArchivioProvider'
 import { CameraCapture } from './CameraCapture'
+import { CropSheet } from './CropSheet'
 import { Icon } from './Icon'
 import { Progress, Sheet, Spinner } from './ui'
 
@@ -53,6 +54,8 @@ export function AddDocument({
   const [staged, setStaged] = useState<StagedAsset[]>([])
   const [cameraSide, setCameraSide] = useState<Side | null>(null)
   const [pickerSide, setPickerSide] = useState<Side | null>(null)
+  /** Immagine in attesa di conferma del ritaglio. */
+  const [cropping, setCropping] = useState<{ side: Side; blob: Blob } | null>(null)
   const [ocrProgress, setOcrProgress] = useState<OcrProgress | null>(null)
   const [fields, setFields] = useState<ExtractedField[]>([])
   const [title, setTitle] = useState('')
@@ -77,6 +80,20 @@ export function AddDocument({
   const back = staged.find((s) => s.side === 'back')
 
   /* ------------------------------ acquisizione ----------------------------- */
+
+  /**
+   * Le immagini passano dalla conferma del ritaglio: una foto scattata a mano
+   * libera è quasi sempre inclinata, e raddrizzarla cambia radicalmente la resa
+   * dell'OCR. I PDF no: sono già pagine rettangolari.
+   */
+  async function receive(side: Side, file: Blob) {
+    setError(null)
+    if (!isPdf(file)) {
+      setCropping({ side, blob: file })
+      return
+    }
+    await stage(side, file)
+  }
 
   async function stage(side: Side, file: Blob) {
     setError(null)
@@ -505,9 +522,22 @@ export function AddDocument({
           const side = pickerSide
           e.target.value = ''
           setPickerSide(null)
-          if (file && side) await stage(side, file)
+          if (file && side) await receive(side, file)
         }}
       />
+
+      {cropping && (
+        <CropSheet
+          image={cropping.blob}
+          sideLabel={cropping.side === 'front' ? 'Fronte' : 'Retro'}
+          onCancel={() => setCropping(null)}
+          onConfirm={async (result) => {
+            const side = cropping.side
+            setCropping(null)
+            await stage(side, result)
+          }}
+        />
+      )}
 
       {cameraSide && (
         <CameraCapture
@@ -516,7 +546,7 @@ export function AddDocument({
           onCapture={async (blob) => {
             const side = cameraSide
             setCameraSide(null)
-            if (side) await stage(side, blob)
+            if (side) await receive(side, blob)
           }}
         />
       )}
