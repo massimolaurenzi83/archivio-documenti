@@ -170,46 +170,102 @@ function parseTD1(l1: string, l2: string, l3: string): MrzResult {
 }
 
 /**
+ * Righe candidate a essere MRZ.
+ *
+ * La soglia di lunghezza è bassa di proposito: la coda di `<` di una riga MRZ è
+ * ciò che l'OCR sbaglia più spesso (li legge come `e`, `c`, o li perde), e una
+ * riga 1 accorciata scartata qui è la causa di un allineamento sbagliato più
+ * sotto. Meglio tenerla e completarla con il padding.
+ *
+ * Le righe duplicate vengono rimosse: il testo che arriva contiene sia la
+ * lettura a pagina intera sia quella della passata dedicata alla MRZ, quindi le
+ * stesse righe compaiono due volte e creerebbero finestre di scansione spurie.
+ */
+function candidateLines(text: string): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const raw of text.split(/\r?\n/)) {
+    const line = normalizeLine(raw)
+    if (line.length < 20) continue
+    if ((line.match(/</g)?.length ?? 0) < 2) continue
+    if (seen.has(line)) continue
+    seen.add(line)
+    out.push(line)
+  }
+  return out
+}
+
+/** Una riga di dati MRZ contiene cifre; la riga dei nomi no. */
+const hasDigits = (line: string) => /\d/.test(line)
+
+/**
+ * La riga 1 di un TD1 ha la cifra di controllo del numero documento in
+ * posizione 15 (indice 14). Se lì non c'è una cifra, quella riga non è una
+ * riga 1 — è il controllo che impedisce di allineare la riga dei nomi al posto
+ * della prima, errore che produce un numero di documento inventato pescando
+ * dentro il cognome.
+ */
+function looksLikeTd1First(line: string): boolean {
+  return /^[A-Z<]{2}[A-Z<]{3}/.test(line) && hasDigits(line) && /\d/.test(line[14] ?? '')
+}
+
+/** La riga 2 di un TD1 inizia con la data di nascita: sei cifre più il controllo. */
+function looksLikeTd1Second(line: string): boolean {
+  return /^\d{6}\d/.test(line)
+}
+
+/**
  * Cerca una MRZ in un testo OCR completo e la interpreta.
- * Restituisce `null` se non ne trova una plausibile.
+ *
+ * Tra le interpretazioni possibili non si prende la prima plausibile ma la
+ * **migliore**: quella con più cifre di controllo verificate. Su una scansione
+ * rumorosa più finestre possono sembrare valide, e la prima non è
+ * necessariamente quella giusta.
  */
 export function parseMrz(text: string): MrzResult | null {
-  const lines = text
-    .split(/\r?\n/)
-    .map(normalizeLine)
-    // Le righe MRZ sono lunghe e ricche di `<`: scartiamo subito il resto.
-    .filter((l) => l.length >= 28 && (l.match(/</g)?.length ?? 0) >= 2)
+  const lines = candidateLines(text)
+  const candidates: MrzResult[] = []
 
-  // TD1: tre righe consecutive da ~30 caratteri.
+  // TD1: tre righe da 30 caratteri.
   for (let i = 0; i + 2 < lines.length; i++) {
     const trio = [lines[i], lines[i + 1], lines[i + 2]]
-    if (trio.every((l) => l.length >= 29 && l.length <= 32)) {
-      const padded = trio.map((l) => l.padEnd(30, '<').slice(0, 30))
-      const result = parseTD1(padded[0], padded[1], padded[2])
-      if (plausible(result)) return result
-    }
+    if (!trio.every((l) => l.length >= 24 && l.length <= 34)) continue
+    const padded = trio.map((l) => l.padEnd(30, '<').slice(0, 30))
+    // Vincoli strutturali prima di fidarsi dei checksum.
+    if (!looksLikeTd1First(padded[0]) || !looksLikeTd1Second(padded[1])) continue
+    if (hasDigits(padded[2])) continue // la terza riga sono i nomi
+    candidates.push(parseTD1(padded[0], padded[1], padded[2]))
   }
 
-  // TD3 e TD2: due righe consecutive.
+  // TD3 e TD2: due righe.
   for (let i = 0; i + 1 < lines.length; i++) {
     const a = lines[i]
     const b = lines[i + 1]
-    if (a.length >= 42 && b.length >= 42) {
-      const result = parseTD3(a.padEnd(44, '<').slice(0, 44), b.padEnd(44, '<').slice(0, 44))
-      if (plausible(result)) return result
+    // La prima riga porta i nomi (nessuna cifra), la seconda i dati.
+    if (hasDigits(a) || !hasDigits(b)) continue
+
+    if (a.length >= 38 && b.length >= 38) {
+      candidates.push(parseTD3(a.padEnd(44, '<').slice(0, 44), b.padEnd(44, '<').slice(0, 44)))
     }
-    if (a.length >= 34 && a.length <= 38 && b.length >= 34 && b.length <= 38) {
-      const result = parseTD2(a.padEnd(36, '<').slice(0, 36), b.padEnd(36, '<').slice(0, 36))
-      if (plausible(result)) return result
+    if (a.length >= 30 && a.length <= 38 && b.length >= 30 && b.length <= 38) {
+      candidates.push(parseTD2(a.padEnd(36, '<').slice(0, 36), b.padEnd(36, '<').slice(0, 36)))
     }
   }
 
-  return null
+  const plausibleOnes = candidates.filter(plausible)
+  if (plausibleOnes.length === 0) return null
+
+  return plausibleOnes.reduce((best, current) =>
+    verifiedCount(current) > verifiedCount(best) ? current : best,
+  )
+}
+
+function verifiedCount(r: MrzResult): number {
+  return Object.values(r.verified).filter(Boolean).length
 }
 
 /** Accettiamo il risultato solo se almeno un checksum torna e c'è una data valida. */
 function plausible(r: MrzResult): boolean {
-  const checks = Object.values(r.verified).filter(Boolean).length
   const hasDate = Boolean(r.birthDate || r.expiryDate)
-  return checks >= 1 && hasDate
+  return verifiedCount(r) >= 1 && hasDate
 }

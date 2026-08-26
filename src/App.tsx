@@ -11,6 +11,7 @@ import type { CategoryId, ArchivioDocument } from './types'
 import { useArchivio } from './state/ArchivioProvider'
 import { AddDocument } from './components/AddDocument'
 import { AuthGate } from './components/AuthGate'
+import { BatchImport } from './components/BatchImport'
 import { Dashboard } from './components/Dashboard'
 import { DocumentDetail } from './components/DocumentDetail'
 import { DocumentList } from './components/DocumentList'
@@ -29,6 +30,7 @@ export function App() {
   const [activeProfileId, setActiveProfileId] = useState(SELF_PROFILE_ID)
   const [openDoc, setOpenDoc] = useState<ArchivioDocument | null>(null)
   const [adding, setAdding] = useState<{ category?: CategoryId } | null>(null)
+  const [batch, setBatch] = useState(false)
   const [filterCategory, setFilterCategory] = useState<CategoryId | null>(null)
   const [onboarding, setOnboarding] = useState(false)
 
@@ -50,6 +52,7 @@ export function App() {
     if (status !== 'unlocked') {
       setOpenDoc(null)
       setAdding(null)
+      setBatch(false)
     }
   }, [status])
 
@@ -153,6 +156,7 @@ export function App() {
             profileName={activeProfile?.isSelf ? 'I miei documenti' : (activeProfile?.name ?? '')}
             onOpen={setOpenDoc}
             onAdd={(cat) => setAdding({ category: cat })}
+            onAddMany={() => setBatch(true)}
             onGoToDocuments={(cat) => {
               setFilterCategory(cat ?? null)
               setTab('documents')
@@ -237,6 +241,18 @@ export function App() {
           doc={documents.find((d) => d.id === openDoc.id) ?? openDoc}
           ownerName={ownerNameFor(openDoc)}
           onClose={() => setOpenDoc(null)}
+        />
+      )}
+
+      {batch && activeProfile && (
+        <BatchImport
+          profileId={activeProfile.id}
+          profileName={activeProfile.isSelf ? undefined : activeProfile.name}
+          onClose={() => setBatch(false)}
+          onSaved={() => {
+            setBatch(false)
+            setTab('documents')
+          }}
         />
       )}
 

@@ -20,6 +20,8 @@ export interface DashboardProps {
   profileName: string
   onOpen: (doc: ArchivioDocument) => void
   onAdd: (category?: CategoryId) => void
+  /** Apre il caricamento in blocco. */
+  onAddMany: () => void
   onGoToDocuments: (category?: CategoryId) => void
   onGoToFamily: () => void
 }
@@ -29,6 +31,7 @@ export function Dashboard({
   profileName,
   onOpen,
   onAdd,
+  onAddMany,
   onGoToDocuments,
   onGoToFamily,
 }: DashboardProps) {
@@ -100,15 +103,11 @@ export function Dashboard({
             </span>
             Documenti
           </button>
-          <button
-            type="button"
-            className="quick-action"
-            onClick={() => onAdd('identity_card')}
-          >
+          <button type="button" className="quick-action" onClick={onAddMany}>
             <span className="quick-action-icon">
               <Icon name="scan" size={20} />
             </span>
-            Scansiona
+            Più documenti
           </button>
           {snapshot.settings.familyEnabled && (
             <button type="button" className="quick-action" onClick={onGoToFamily}>

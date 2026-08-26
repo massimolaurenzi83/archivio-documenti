@@ -160,23 +160,40 @@ function classifyDates(text: string): Partial<Record<'birthDate' | 'issueDate' |
 
 /* ---------------------------- numero documento ---------------------------- */
 
+/*
+ * I formati sono delimitati esplicitamente invece di affidarsi a `\b`: `\b` non
+ * impedisce a un numero di formarsi a cavallo di due parole. Senza questo
+ * vincolo, da «SCADENZA 12/07/2030» si ricava «ZA1207203» — due lettere prese
+ * dalla fine di SCADENZA e le cifre della data.
+ */
 const DOC_NUMBER_PATTERNS: RegExp[] = [
-  /\b(C[A-Z]\d{5}[A-Z]{2})\b/, // CIE: CA00000AA
-  /\b([A-Z]{2}\d{7})\b/, // passaporto: YA1234567
-  /\b([A-Z]{2}\d{7}[A-Z])\b/, // patente: XX1234567X
-  /\b(\d{9,10})\b/, // tessere varie
+  /(?:^|[^A-Z0-9])(C[A-Z]\d{5}[A-Z]{2})(?![A-Z0-9])/, // CIE: CA00000AA
+  /(?:^|[^A-Z0-9])([A-Z]{2}\d{7}[A-Z])(?![A-Z0-9])/, // patente: XX1234567X
+  /(?:^|[^A-Z0-9])([A-Z]{2}\d{7})(?![A-Z0-9])/, // passaporto: YA1234567
 ]
+
+/*
+ * Etichette che precedono il numero. La «N» isolata è stata rimossa di
+ * proposito: agganciava la N di INDIRIZZO o di SANITARIA e restituiva come
+ * numero di documento la parola successiva.
+ */
+const DOC_NUMBER_LABEL =
+  /(?:NUMERO|NR\.|N\.|N°|CARD\s*N[O°.]?|DOCUMENT[O]?\s*N[O°.]?)\s*[:.]?\s*([A-Z0-9]{6,12})(?![A-Z0-9])/
+
+/** Un numero di documento non è una parola: deve contenere almeno una cifra. */
+function plausibleDocNumber(candidate: string): boolean {
+  return /\d/.test(candidate) && /^[A-Z0-9]{6,12}$/.test(candidate)
+}
 
 function findDocumentNumber(text: string): string | undefined {
   const upper = text.toUpperCase()
-  // Se c'è un'etichetta espressa, guardiamo solo il testo che la segue.
-  const labelled = /(?:NUMERO|NR\.?|N\.?°?|CARD\s*N|DOCUMENT\s*N[O°]?)\s*[:.]?\s*([A-Z0-9]{6,12})\b/.exec(
-    upper,
-  )
-  if (labelled) return labelled[1]
+
+  const labelled = DOC_NUMBER_LABEL.exec(upper)
+  if (labelled && plausibleDocNumber(labelled[1])) return labelled[1]
+
   for (const pattern of DOC_NUMBER_PATTERNS) {
     const m = pattern.exec(upper)
-    if (m) return m[1]
+    if (m && plausibleDocNumber(m[1])) return m[1]
   }
   return undefined
 }
@@ -250,7 +267,9 @@ function afterLabelRaw(lines: string[], patterns: RegExp[]): string | undefined 
           .replace(/^[\s:./|-]+/, '')
           .replace(/\s+/g, ' ')
           .trim()
-        if (value.length >= 5 && /[A-Za-z]{3}/.test(value)) return value.toUpperCase()
+        // Tre caratteri bastano: un comune come ROMA non deve essere scartato,
+        // altrimenti l'etichetta pesca la riga successiva.
+        if (value.length >= 3 && /[A-Za-z]{3}/.test(value)) return value.toUpperCase()
       }
     }
   }

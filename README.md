@@ -33,6 +33,12 @@ tuo archivio nasce vuoto sul tuo telefono o sul tuo computer e non esce da lì.
   scansione è venuto male. Questi campi sono marcati come *verificati*.
 - **Categorie** predefinite: carta d'identità, passaporto, tessera sanitaria,
   codice fiscale, patente, documenti generali, password/credenziali, altro.
+- **Caricamento in blocco**: scegli molte immagini in una volta e l'app le
+  elabora in coda — raddrizzamento, OCR, riconoscimento della categoria dal
+  testo stampato (o dal formato MRZ: TD3 è un passaporto, TD1 una carta
+  d'identità) e accorpamento automatico di fronte e retro consecutivi. Poi
+  confermi un elenco già compilato. Serve alla prima volta, quando i documenti
+  da inserire sono dieci o quindici.
 - **Avvisi di scadenza** con preavviso configurabile, e **promemoria nel
   calendario** del telefono con due allarmi (60 e 7 giorni prima). Il perché di
   questo giro: una notifica push richiederebbe un server, e questa app non ne
@@ -134,6 +140,7 @@ src/
     db.ts          IndexedDB — solo record cifrati
     ocr.ts         Tesseract.js locale, pre-elaborazione immagine, passata MRZ
     scan.ts        rilevamento del bordo (Sobel + Hough) e raddrizzamento
+    classify.ts    categoria e faccia dal testo, accorpamento fronte/retro
     mrz.ts         parser MRZ TD1/TD2/TD3 con cifre di controllo
     extract.ts     estrazione campi da documenti italiani (con validazione CF)
     backup.ts      contenitore .archbk cifrato
