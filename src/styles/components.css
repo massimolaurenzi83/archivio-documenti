@@ -1828,3 +1828,25 @@ button.list-row:hover {
     var(--bg-elevated)
   );
 }
+
+/* Intestazione del foglio: titolo a sinistra, chiusura a destra.
+   Il pulsante è l'unica via d'uscita visibile quando il contenuto riempie lo
+   schermo e non resta sfondo da toccare. */
+.sheet-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.sheet-header .sheet-title {
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+.sheet-close {
+  flex-shrink: 0;
+  /* Recupera il margine ottico: il glifo è più piccolo dell'area di tocco. */
+  margin: calc(var(--space-1) * -1) calc(var(--space-2) * -1) 0 0;
+}

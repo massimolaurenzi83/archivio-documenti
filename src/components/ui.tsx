@@ -22,12 +22,73 @@ export interface SheetProps {
 }
 
 /**
+ * Fogli aperti, dal più esterno al più interno.
+ *
+ * Serve al tasto «indietro» del telefono: quando arriva, deve chiudere solo il
+ * foglio in cima. Senza questo elenco, un foglio aperto sopra un altro li
+ * chiuderebbe entrambi in un colpo.
+ */
+let pilaFogli: symbol[] = []
+
+/**
+ * Quante voci di cronologia stiamo per togliere da soli.
+ *
+ * Chiudendo un foglio con la X rimuoviamo la voce che avevamo aggiunto, e quel
+ * `history.back()` produce un evento identico a quello del tasto indietro: il
+ * contatore evita che venga scambiato per una richiesta di chiusura e chiuda
+ * anche il foglio sottostante.
+ */
+let popDaIgnorare = 0
+
+/**
  * Foglio modale. Su mobile sale dal basso, su desktop compare al centro.
- * Gestisce Esc, click sullo sfondo e blocco dello scroll sottostante.
+ *
+ * Vie d'uscita, tutte necessarie: il pulsante di chiusura (l'unica visibile
+ * quando il contenuto riempie lo schermo e non resta sfondo da toccare), il
+ * tasto «indietro» del telefono, il tasto Esc e il tocco sullo sfondo.
  */
 export function Sheet({ open, onClose, title, children, bare }: SheetProps) {
   const panelRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
+
+  // La funzione di chiusura arriva spesso come funzione anonima, quindi cambia
+  // a ogni render: tenerla in un riferimento evita di rieseguire l'effetto
+  // sotto, che altrimenti aggiungerebbe una voce di cronologia per ogni render.
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    onCloseRef.current = onClose
+  })
+
+  useEffect(() => {
+    if (!open) return
+    const token = Symbol('foglio')
+    pilaFogli.push(token)
+    window.history.pushState({ foglio: true }, '')
+
+    const onPop = () => {
+      if (popDaIgnorare > 0) {
+        popDaIgnorare--
+        return
+      }
+      // Reagisce solo il foglio in cima alla pila.
+      if (pilaFogli[pilaFogli.length - 1] !== token) return
+      pilaFogli = pilaFogli.filter((t) => t !== token)
+      onCloseRef.current()
+    }
+    window.addEventListener('popstate', onPop)
+
+    return () => {
+      window.removeEventListener('popstate', onPop)
+      const eraAperto = pilaFogli.includes(token)
+      pilaFogli = pilaFogli.filter((t) => t !== token)
+      if (eraAperto) {
+        // Chiuso senza il tasto indietro: togliamo la voce che avevamo aggiunto,
+        // altrimenti resterebbe una tappa fantasma nella cronologia.
+        popDaIgnorare++
+        window.history.back()
+      }
+    }
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -64,10 +125,24 @@ export function Sheet({ open, onClose, title, children, bare }: SheetProps) {
         tabIndex={-1}
       >
         {!bare && <div className="sheet-handle" aria-hidden="true" />}
-        {title && (
-          <h2 className="sheet-title" id={titleId}>
-            {title}
-          </h2>
+        {!bare && (
+          <div className="sheet-header">
+            {title ? (
+              <h2 className="sheet-title" id={titleId}>
+                {title}
+              </h2>
+            ) : (
+              <span />
+            )}
+            <button
+              type="button"
+              className="btn-icon sheet-close"
+              onClick={onClose}
+              aria-label="Chiudi"
+            >
+              <Icon name="close" size={18} />
+            </button>
+          </div>
         )}
         {children}
       </div>
