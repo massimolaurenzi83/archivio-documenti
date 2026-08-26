@@ -95,3 +95,19 @@ export function groupBy<T, K extends string>(items: T[], key: (item: T) => K): M
   }
   return out
 }
+
+/**
+ * Maschera un valore lasciando visibile quanto basta a riconoscerlo senza
+ * rivelarlo: `RSSMRA85T10A562S` diventa `RSS•••••••••62S`.
+ *
+ * Serve nella sezione dei dati rapidi, dove il valore sta in una schermata che
+ * si apre subito dopo lo sblocco: chi sbircia lo schermo non deve poterlo
+ * leggere, ma l'utente deve capire quale dato è.
+ */
+export function maskValue(value: string): string {
+  const clean = value.trim()
+  if (clean.length <= 4) return '•'.repeat(Math.max(clean.length, 3))
+  const head = clean.length >= 10 ? 3 : 1
+  const tail = clean.length >= 10 ? 3 : 1
+  return clean.slice(0, head) + '•'.repeat(clean.length - head - tail) + clean.slice(-tail)
+}

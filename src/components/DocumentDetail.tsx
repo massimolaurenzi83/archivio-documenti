@@ -329,6 +329,30 @@ export function DocumentDetail({ doc, onClose, ownerName }: DocumentDetailProps)
                     </div>
                   </div>
                   <div className="field-actions">
+                    <button
+                      type="button"
+                      className="btn-icon"
+                      aria-label={
+                        archivio.isPinned(doc.id, field.key)
+                          ? `Togli ${FIELD_LABELS[field.key]} dai dati rapidi`
+                          : `Aggiungi ${FIELD_LABELS[field.key]} ai dati rapidi`
+                      }
+                      title="Dati rapidi in dashboard"
+                      style={{
+                        color: archivio.isPinned(doc.id, field.key) ? 'var(--accent)' : undefined,
+                      }}
+                      onClick={async () => {
+                        const added = await archivio.togglePinnedField(doc.id, field.key)
+                        toast(
+                          added
+                            ? `${FIELD_LABELS[field.key]} tra i dati rapidi.`
+                            : 'Rimosso dai dati rapidi.',
+                          added ? 'success' : 'info',
+                        )
+                      }}
+                    >
+                      <Icon name="sparkle" size={17} />
+                    </button>
                     <CopyButton value={field.value} label={FIELD_LABELS[field.key]} />
                     <button
                       type="button"

@@ -87,6 +87,12 @@ export interface Profile {
   createdAt: number
 }
 
+/** Riferimento a un campo appuntato per l'accesso rapido dalla dashboard. */
+export interface PinnedField {
+  docId: string
+  key: FieldKey
+}
+
 export interface Settings {
   /** Minuti di inattività prima del blocco automatico. */
   autoLockMinutes: number
@@ -104,6 +110,13 @@ export interface Settings {
    * account condiviso.
    */
   calendarAnonymous: boolean
+  /** Campi mostrati nella sezione "Dati rapidi" della dashboard. */
+  pinnedFields: PinnedField[]
+  /**
+   * L'app ha già proposto una volta il codice fiscale come dato rapido. Serve a
+   * non riproporlo a chi lo ha volutamente rimosso.
+   */
+  pinnedSuggested: boolean
   theme: 'dark' | 'light' | 'system'
 }
 
@@ -114,6 +127,8 @@ export const DEFAULT_SETTINGS: Settings = {
   expiryWarningDays: 60,
   ocrAutoRun: true,
   calendarAnonymous: false,
+  pinnedFields: [],
+  pinnedSuggested: false,
   theme: 'dark',
 }
 

@@ -12,6 +12,7 @@ import type { CategoryId, ArchivioDocument } from '../types'
 import { useArchivio } from '../state/ArchivioProvider'
 import { Icon } from './Icon'
 import { DocumentCard } from './DocumentList'
+import { QuickFields } from './QuickFields'
 import { EmptyState } from './ui'
 
 export interface DashboardProps {
@@ -82,6 +83,8 @@ export function Dashboard({
           </span>
         </div>
       </section>
+
+      <QuickFields />
 
       <section>
         <div className="quick-actions">

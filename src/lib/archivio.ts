@@ -44,6 +44,7 @@ import {
 import {
   DEFAULT_SETTINGS,
   type AssetRef,
+  type PinnedField,
   type Profile,
   type Settings,
   type Side,
@@ -317,6 +318,7 @@ class ArchivioService {
     this.dek = dek
     this.lastVerifiedAt = Date.now()
     await this.loadAll()
+    await this.suggestInitialPins()
     this.status = 'unlocked'
     this.error = null
     this.emit()
@@ -474,6 +476,11 @@ class ArchivioService {
     )
     await deleteEncrypted('documents', id)
     this.documents.delete(id)
+    // Un pin che punta a un documento eliminato è spazzatura: via subito.
+    const pinned = this.settings.pinnedFields ?? []
+    if (pinned.some((p) => p.docId === id)) {
+      await this.updateSettings({ pinnedFields: pinned.filter((p) => p.docId !== id) })
+    }
     this.emit()
   }
 
@@ -496,6 +503,61 @@ class ArchivioService {
     await deleteEncrypted('profiles', id)
     this.profiles.delete(id)
     this.emit()
+  }
+
+  /* --------------------------- dati rapidi (pin) ------------------------- */
+
+  /** Appunta o rimuove un campo dalla sezione dei dati rapidi. */
+  async togglePinnedField(docId: string, key: PinnedField['key']): Promise<boolean> {
+    const current = this.settings.pinnedFields ?? []
+    const exists = current.some((p) => p.docId === docId && p.key === key)
+    const next = exists
+      ? current.filter((p) => !(p.docId === docId && p.key === key))
+      : [...current, { docId, key }]
+    await this.updateSettings({ pinnedFields: next })
+    return !exists
+  }
+
+  isPinned(docId: string, key: PinnedField['key']): boolean {
+    return (this.settings.pinnedFields ?? []).some((p) => p.docId === docId && p.key === key)
+  }
+
+  /**
+   * Campi appuntati ancora validi, con il valore corrente. I riferimenti a
+   * documenti o campi che non esistono più vengono ignorati qui e ripuliti dal
+   * prossimo salvataggio delle impostazioni.
+   */
+  pinnedEntries(): { docId: string; key: PinnedField['key']; value: string; title: string }[] {
+    const out: { docId: string; key: PinnedField['key']; value: string; title: string }[] = []
+    for (const pin of this.settings.pinnedFields ?? []) {
+      const doc = this.documents.get(pin.docId)
+      const field = doc?.fields.find((f) => f.key === pin.key)
+      if (doc && field) out.push({ docId: pin.docId, key: pin.key, value: field.value, title: doc.title })
+    }
+    return out
+  }
+
+  /**
+   * Al primo sblocco propone il codice fiscale del profilo principale: è il
+   * dato che in Italia si chiede più spesso, e senza questo suggerimento la
+   * sezione resterebbe vuota finché l'utente non scopre il pin da sé.
+   */
+  private async suggestInitialPins(): Promise<void> {
+    if (this.settings.pinnedSuggested) return
+    const candidate = [...this.documents.values()]
+      .filter((d) => d.profileId === SELF_PROFILE_ID)
+      .sort((a, b) => a.createdAt - b.createdAt)
+      .flatMap((doc) => {
+        const field = doc.fields.find((f) => f.key === 'fiscalCode')
+        return field ? [{ docId: doc.id, key: field.key }] : []
+      })[0]
+
+    // Il flag si alza comunque: se non c'era un codice fiscale da proporre, non
+    // ha senso riprovare a ogni sblocco.
+    await this.updateSettings({
+      pinnedSuggested: true,
+      pinnedFields: candidate ? [candidate] : (this.settings.pinnedFields ?? []),
+    })
   }
 
   /* ----------------------------- impostazioni ---------------------------- */

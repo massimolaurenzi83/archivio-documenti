@@ -23,6 +23,10 @@ tuo archivio nasce vuoto sul tuo telefono o sul tuo computer e non esce da lì.
   cognome, codice fiscale, numero documento, date di nascita/rilascio/scadenza,
   indirizzo. Ogni campo ha il suo pulsante *copia*, per incollare il codice
   fiscale in un messaggio senza ricopiarlo a mano.
+- **Dati rapidi**: i campi che usi sempre, appuntati in dashboard e copiabili
+  con un tocco. I valori restano mascherati (`RSS••••••••••62S`) fino alla
+  riconferma d'identità, poi leggibili per venti secondi. Al primo avvio l'app
+  propone da sé il codice fiscale del profilo principale.
 - **Lettura della banda MRZ** (le righe con i `<<<` sul retro della Carta
   d'Identità Elettronica e nella pagina dati del passaporto). La MRZ ha cifre di
   controllo: quando il checksum torna, il dato è esatto anche se il resto della
