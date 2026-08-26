@@ -1,6 +1,14 @@
 /** Modello dati del caveau. Nessun tipo qui viene mai serializzato in chiaro su disco. */
 
-export type Side = 'front' | 'back'
+/**
+ * Posizione di un'immagine nel documento.
+ *
+ * `front` e `back` valgono per i documenti a due facciate, dove la distinzione
+ * è sostanziale: sulla carta d'identità il retro è dove stanno MRZ e indirizzo.
+ * `page` vale per i documenti a più pagine (contratti, referti), dove conta
+ * solo l'ordine: l'etichetta mostrata è la posizione nell'elenco.
+ */
+export type Side = 'front' | 'back' | 'page'
 
 export type CategoryId =
   | 'identity_card'

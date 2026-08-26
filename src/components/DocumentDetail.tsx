@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { category } from '../lib/categories'
 import { DATE_FIELDS, FIELD_LABELS, FIELD_ORDER } from '../lib/extract'
 import { buildReminders, deliverReminders } from '../lib/calendar'
-import { expiryInfo, formatIsoDate, formatTimestamp } from '../lib/format'
+import { expiryInfo, formatIsoDate, formatTimestamp, pageLabel } from '../lib/format'
 import { canvasToBlob, renderPdfPage } from '../lib/pdf'
 import {
   extensionForMime,
@@ -19,7 +19,7 @@ import {
   copyText,
 } from '../lib/share'
 import { archivio } from '../lib/archivio'
-import type { ExtractedField, FieldKey, Side, ArchivioDocument } from '../types'
+import type { ExtractedField, FieldKey, ArchivioDocument } from '../types'
 import { useArchivio } from '../state/ArchivioProvider'
 import { Icon } from './Icon'
 import { ConfirmSheet, CopyButton, EmptyState, Sheet, Spinner } from './ui'
@@ -33,9 +33,10 @@ export interface DocumentDetailProps {
 export function DocumentDetail({ doc, onClose, ownerName }: DocumentDetailProps) {
   const { snapshot, requireAuth, toast } = useArchivio()
   const def = category(doc.category)
-  const [side, setSide] = useState<Side>('front')
+  /** Indice della pagina mostrata: funziona sia per fronte/retro sia per i multipagina. */
+  const [pageIndex, setPageIndex] = useState(0)
   const [revealed, setRevealed] = useState(false)
-  const [urls, setUrls] = useState<Partial<Record<Side, string>>>({})
+  const [urls, setUrls] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [editing, setEditing] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -44,23 +45,25 @@ export function DocumentDetail({ doc, onClose, ownerName }: DocumentDetailProps)
 
   const expiry = expiryInfo(doc, snapshot.settings.expiryWarningDays)
   const assets = doc.assets
-  const current = assets.find((a) => a.side === side) ?? assets[0]
+  const current = assets[pageIndex] ?? assets[0]
 
   /* --------------------------- caricamento immagini ------------------------ */
 
   const loadAssets = useCallback(async () => {
     setLoading(true)
     try {
-      const next: Partial<Record<Side, string>> = {}
+      // Chiave per id, non per faccia: le pagine di un multipagina hanno tutte
+      // `side: 'page'` e si sovrascriverebbero a vicenda.
+      const next: Record<string, string> = {}
       for (const ref of assets) {
         const blob = await archivio.loadAsset(ref)
         // Un PDF non si mostra in un <img>: ne renderizziamo la prima pagina.
         if (ref.mime === 'application/pdf') {
           const { canvas } = await renderPdfPage(blob, 1, 1200)
           const png = await canvasToBlob(canvas, 'image/png')
-          next[ref.side] = URL.createObjectURL(png)
+          next[ref.id] = URL.createObjectURL(png)
         } else {
-          next[ref.side] = URL.createObjectURL(blob)
+          next[ref.id] = URL.createObjectURL(blob)
         }
       }
       setUrls(next)
@@ -106,7 +109,10 @@ export function DocumentDetail({ doc, onClose, ownerName }: DocumentDetailProps)
         files.push(
           new File(
             [blob],
-            safeFilename([doc.title, ref.side === 'back' ? 'retro' : 'fronte'], extensionForMime(ref.mime)),
+            safeFilename(
+              [doc.title, pageLabel(ref.side, assets.indexOf(ref)).toLowerCase()],
+              extensionForMime(ref.mime),
+            ),
             { type: ref.mime },
           ),
         )
@@ -202,22 +208,54 @@ export function DocumentDetail({ doc, onClose, ownerName }: DocumentDetailProps)
           {/* ------------------------------ anteprima ---------------------- */}
           {assets.length > 0 && (
             <>
-              {assets.length > 1 && (
-                <div className="side-tabs" role="group" aria-label="Faccia del documento">
-                  <button type="button" aria-pressed={side === 'front'} onClick={() => setSide('front')}>
-                    Fronte
-                  </button>
-                  <button type="button" aria-pressed={side === 'back'} onClick={() => setSide('back')}>
-                    Retro
-                  </button>
-                </div>
-              )}
+              {assets.length > 1 &&
+                (def.multiPage ? (
+                  <div className="page-nav" role="group" aria-label="Pagina del documento">
+                    <button
+                      type="button"
+                      className="btn-icon"
+                      aria-label="Pagina precedente"
+                      disabled={pageIndex === 0}
+                      onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
+                    >
+                      <Icon name="chevron-left" size={18} />
+                    </button>
+                    <span className="page-nav-label">
+                      {pageLabel('page', pageIndex, assets.length)}
+                    </span>
+                    <button
+                      type="button"
+                      className="btn-icon"
+                      aria-label="Pagina successiva"
+                      disabled={pageIndex >= assets.length - 1}
+                      onClick={() => setPageIndex((i) => Math.min(assets.length - 1, i + 1))}
+                    >
+                      <Icon name="chevron-right" size={18} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="side-tabs" role="group" aria-label="Faccia del documento">
+                    {assets.map((asset, index) => (
+                      <button
+                        key={asset.id}
+                        type="button"
+                        aria-pressed={pageIndex === index}
+                        onClick={() => setPageIndex(index)}
+                      >
+                        {pageLabel(asset.side, index)}
+                      </button>
+                    ))}
+                  </div>
+                ))}
 
               <div className="preview">
                 {loading ? (
                   <Spinner label="Decifratura…" />
-                ) : revealed && current && urls[current.side] ? (
-                  <img src={urls[current.side]} alt={`${doc.title} — ${current.side}`} />
+                ) : revealed && current && urls[current.id] ? (
+                  <img
+                    src={urls[current.id]}
+                    alt={`${doc.title} — ${pageLabel(current.side, pageIndex, assets.length)}`}
+                  />
                 ) : (
                   <div className="preview-empty">
                     <Icon name="lock" size={26} />

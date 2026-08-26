@@ -33,6 +33,10 @@ tuo archivio nasce vuoto sul tuo telefono o sul tuo computer e non esce da lì.
   scansione è venuto male. Questi campi sono marcati come *verificati*.
 - **Categorie** predefinite: carta d'identità, passaporto, tessera sanitaria,
   codice fiscale, patente, documenti generali, password/credenziali, altro.
+- **Documenti a più pagine** per contratti, referti e libretti: elenco ordinato
+  con riordino, sfogliatore nella scheda, OCR su tutte le pagine. I documenti a
+  due facciate restano come prima, con Fronte e Retro: la generalizzazione non
+  complica il caso frequente.
 - **Caricamento in blocco**: scegli molte immagini in una volta e l'app le
   elabora in coda — raddrizzamento, OCR, riconoscimento della categoria dal
   testo stampato (o dal formato MRZ: TD3 è un passaporto, TD1 una carta

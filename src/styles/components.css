@@ -1737,3 +1737,67 @@ button.list-row:hover {
   /* I pomelli catturano il tocco, il resto lascia passare lo scroll. */
   touch-action: none;
 }
+
+/* ========================== documenti multipagina ======================= */
+
+/* Striscia delle pagine in acquisizione: elenco verticale, non griglia, perché
+   l'ordine è l'informazione principale e va letto dall'alto in basso. */
+.page-strip {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+}
+
+.page-strip-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  background: var(--bg-raised);
+  border: var(--border-hairline) solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.page-strip-item img {
+  width: 56px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: var(--bg-sunken);
+  flex-shrink: 0;
+}
+
+.page-strip-number {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  min-width: 1.5em;
+}
+
+.page-strip-actions {
+  display: flex;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+/* Sfogliatore nella scheda documento. */
+.page-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1);
+  background: var(--bg-raised);
+  border: var(--border-hairline) solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+}
+
+.page-nav-label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}

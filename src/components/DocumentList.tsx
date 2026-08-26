@@ -174,7 +174,15 @@ export function DocumentCard({
           {ownerName && <span className="doc-sub-dot">{ownerName}</span>}
           {sides > 0 && (
             <span className="doc-sub-dot">
-              {sides === 2 ? 'fronte + retro' : sides === 1 ? 'solo fronte' : `${sides} file`}
+              {/* Un multipagina si conta in pagine; un documento a due facciate
+                  si descrive con le facciate che ha. */}
+              {def.multiPage
+                ? `${sides} ${sides === 1 ? 'pagina' : 'pagine'}`
+                : sides === 2
+                  ? 'fronte + retro'
+                  : sides === 1
+                    ? 'solo fronte'
+                    : `${sides} file`}
             </span>
           )}
           {sides === 0 && doc.credential && <span className="doc-sub-dot">credenziali</span>}

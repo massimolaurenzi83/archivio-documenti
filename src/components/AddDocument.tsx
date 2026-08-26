@@ -21,6 +21,8 @@ import { Icon } from './Icon'
 import { Progress, Sheet, Spinner } from './ui'
 
 interface StagedAsset {
+  /** Identità stabile: per i multipagina la posizione cambia col riordino. */
+  id: string
   side: Side
   file: Blob
   /** Anteprima da mostrare: per i PDF è la prima pagina renderizzata. */
@@ -108,18 +110,32 @@ export function AddDocument({
       }
       const previewUrl = URL.createObjectURL(previewBlob)
       urlsRef.current.push(previewUrl)
-      setStaged((current) => [
-        ...current.filter((s) => s.side !== side),
-        { side, file, previewUrl, ocrSource, isPdf: pdf },
-      ])
+      const asset: StagedAsset = { id: randomId(), side, file, previewUrl, ocrSource, isPdf: pdf }
+      setStaged((current) =>
+        // Una pagina si aggiunge in coda; fronte e retro sono posizioni uniche,
+        // quindi una nuova acquisizione sostituisce la precedente.
+        side === 'page' ? [...current, asset] : [...current.filter((s) => s.side !== side), asset],
+      )
     } catch {
       setError('Il file selezionato non è leggibile. Prova con un altro formato.')
     }
   }
 
-  function unstage(side: Side) {
-    setStaged((current) => current.filter((s) => s.side !== side))
+  function unstage(id: string) {
+    setStaged((current) => current.filter((s) => s.id !== id))
     setFields([])
+  }
+
+  /** Riordino delle pagine: frecce invece del trascinamento, più affidabili al tocco. */
+  function movePage(id: string, direction: -1 | 1) {
+    setStaged((current) => {
+      const index = current.findIndex((s) => s.id === id)
+      const target = index + direction
+      if (index < 0 || target < 0 || target >= current.length) return current
+      const next = [...current]
+      ;[next[index], next[target]] = [next[target], next[index]]
+      return next
+    })
   }
 
   /* ---------------------------------- OCR --------------------------------- */
@@ -145,6 +161,26 @@ export function AddDocument({
     return updated
   }
 
+  /**
+   * Su un documento a due facciate il retro ha un ruolo suo (MRZ, indirizzo), e
+   * `extractFields` lo sfrutta. Su un multipagina non esiste un retro: il testo
+   * di tutte le pagine viene concatenato e trattato come un unico blocco, dove
+   * la ricerca della MRZ e delle etichette funziona comunque.
+   */
+  function fieldsFrom(assets: StagedAsset[]): ExtractedField[] {
+    if (def.multiPage) {
+      const joined = assets
+        .map((a) => a.text)
+        .filter(Boolean)
+        .join('\n')
+      return extractFields({ front: joined || undefined })
+    }
+    return extractFields({
+      front: assets.find((s) => s.side === 'front')?.text,
+      back: assets.find((s) => s.side === 'back')?.text,
+    })
+  }
+
   async function goToReview() {
     setStep('review')
     if (!title) setTitle(suggestedTitle(def.label, profileName))
@@ -153,22 +189,14 @@ export function AddDocument({
     if (snapshot.settings.ocrAutoRun && isOcrSupported()) {
       const updated = await runOcr(staged)
       setStaged(updated)
-      setFields(
-        extractFields({
-          front: updated.find((s) => s.side === 'front')?.text,
-          back: updated.find((s) => s.side === 'back')?.text,
-        }),
-      )
+      setFields(fieldsFrom(updated))
     }
   }
 
   async function rerunOcr() {
     const updated = await runOcr(staged)
     setStaged(updated)
-    const next = extractFields({
-      front: updated.find((s) => s.side === 'front')?.text,
-      back: updated.find((s) => s.side === 'back')?.text,
-    })
+    const next = fieldsFrom(updated)
     // Le correzioni manuali già fatte non vanno perse.
     const manual = fields.filter((f) => f.source === 'manual')
     setFields([...next.filter((f) => !manual.some((m) => m.key === f.key)), ...manual])
@@ -223,7 +251,13 @@ export function AddDocument({
     }
   }
 
-  const canProceed = def.secretsOnly ? true : Boolean(front)
+  // Un multipagina richiede almeno una pagina, un documento a due facciate il
+  // fronte; le credenziali non richiedono immagini.
+  const canProceed = def.secretsOnly
+    ? true
+    : def.multiPage
+      ? staged.length > 0
+      : Boolean(front)
 
   /* ---------------------------------- vista -------------------------------- */
 
@@ -270,27 +304,86 @@ export function AddDocument({
               </p>
             ) : (
               <>
-                <p className="sheet-body">
-                  Acquisisci il <strong>fronte</strong> e, se il documento ne ha uno,
-                  il <strong>retro</strong>. Il retro è dove si trovano MRZ e indirizzo: dà i dati
-                  più affidabili.
-                </p>
+                {def.multiPage ? (
+                  <>
+                    <p className="sheet-body">
+                      Aggiungi le pagine nell'ordine in cui vanno lette. Puoi spostarle dopo, e
+                      l'OCR gira su tutte.
+                    </p>
 
-                <div className="capture-slots">
-                  <CaptureSlot
-                    label="Fronte"
-                    asset={front}
-                    required
-                    onPick={() => setPickerSide('front')}
-                    onRemove={() => unstage('front')}
-                  />
-                  <CaptureSlot
-                    label="Retro"
-                    asset={back}
-                    onPick={() => setPickerSide('back')}
-                    onRemove={() => unstage('back')}
-                  />
-                </div>
+                    {staged.length > 0 && (
+                      <ol className="page-strip">
+                        {staged.map((asset, index) => (
+                          <li className="page-strip-item" key={asset.id}>
+                            <img src={asset.previewUrl} alt={`Pagina ${index + 1}`} />
+                            <span className="page-strip-number">{index + 1}</span>
+                            <div className="page-strip-actions">
+                              <button
+                                type="button"
+                                className="btn-icon"
+                                aria-label={`Sposta la pagina ${index + 1} indietro`}
+                                disabled={index === 0}
+                                onClick={() => movePage(asset.id, -1)}
+                              >
+                                <Icon name="chevron-left" size={15} />
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-icon"
+                                aria-label={`Sposta la pagina ${index + 1} avanti`}
+                                disabled={index === staged.length - 1}
+                                onClick={() => movePage(asset.id, 1)}
+                              >
+                                <Icon name="chevron-right" size={15} />
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-icon"
+                                aria-label={`Rimuovi la pagina ${index + 1}`}
+                                onClick={() => unstage(asset.id)}
+                              >
+                                <Icon name="trash" size={15} />
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-block"
+                      onClick={() => setPickerSide('page')}
+                    >
+                      <Icon name="plus" size={17} />
+                      {staged.length === 0 ? 'Aggiungi la prima pagina' : 'Aggiungi pagina'}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="sheet-body">
+                      Acquisisci il <strong>fronte</strong> e, se il documento ne ha uno,
+                      il <strong>retro</strong>. Il retro è dove si trovano MRZ e indirizzo: dà i
+                      dati più affidabili.
+                    </p>
+
+                    <div className="capture-slots">
+                      <CaptureSlot
+                        label="Fronte"
+                        asset={front}
+                        required
+                        onPick={() => setPickerSide('front')}
+                        onRemove={() => front && unstage(front.id)}
+                      />
+                      <CaptureSlot
+                        label="Retro"
+                        asset={back}
+                        onPick={() => setPickerSide('back')}
+                        onRemove={() => back && unstage(back.id)}
+                      />
+                    </div>
+                  </>
+                )}
               </>
             )}
 
@@ -479,7 +572,13 @@ export function AddDocument({
       <Sheet
         open={pickerSide !== null}
         onClose={() => setPickerSide(null)}
-        title={pickerSide === 'back' ? 'Retro del documento' : 'Fronte del documento'}
+        title={
+          pickerSide === 'page'
+            ? `Pagina ${staged.length + 1}`
+            : pickerSide === 'back'
+              ? 'Retro del documento'
+              : 'Fronte del documento'
+        }
       >
         <div className="stack">
           <button
@@ -529,7 +628,9 @@ export function AddDocument({
       {cropping && (
         <CropSheet
           image={cropping.blob}
-          sideLabel={cropping.side === 'front' ? 'Fronte' : 'Retro'}
+          sideLabel={
+            cropping.side === 'page' ? `pagina ${staged.length + 1}` : cropping.side === 'front' ? 'Fronte' : 'Retro'
+          }
           onCancel={() => setCropping(null)}
           onConfirm={async (result) => {
             const side = cropping.side
@@ -541,7 +642,9 @@ export function AddDocument({
 
       {cameraSide && (
         <CameraCapture
-          sideLabel={cameraSide === 'front' ? 'Fronte' : 'Retro'}
+          sideLabel={
+            cameraSide === 'page' ? `Pagina ${staged.length + 1}` : cameraSide === 'front' ? 'Fronte' : 'Retro'
+          }
           onCancel={() => setCameraSide(null)}
           onCapture={async (blob) => {
             const side = cameraSide

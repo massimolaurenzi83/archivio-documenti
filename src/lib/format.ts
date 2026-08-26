@@ -111,3 +111,16 @@ export function maskValue(value: string): string {
   const tail = clean.length >= 10 ? 3 : 1
   return clean.slice(0, head) + '•'.repeat(clean.length - head - tail) + clean.slice(-tail)
 }
+
+/**
+ * Etichetta di un'immagine del documento.
+ *
+ * Per i documenti a due facciate resta «Fronte»/«Retro», che dice qualcosa di
+ * sostanziale. Per i multipagina è la posizione, perché è l'unica cosa che
+ * conta: «Pagina 3 di 8».
+ */
+export function pageLabel(side: 'front' | 'back' | 'page', index: number, total?: number): string {
+  if (side === 'front') return 'Fronte'
+  if (side === 'back') return 'Retro'
+  return total && total > 1 ? `Pagina ${index + 1} di ${total}` : `Pagina ${index + 1}`
+}

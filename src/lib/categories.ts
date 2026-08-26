@@ -24,6 +24,12 @@ export interface CategoryDef {
   expires: boolean
   /** Nessuna immagine richiesta: è una voce di credenziali. */
   secretsOnly?: boolean
+  /**
+   * Il documento può avere un numero qualsiasi di pagine ordinate invece di
+   * fronte e retro. Vale per contratti, referti, libretti: cose che non stanno
+   * su due facciate.
+   */
+  multiPage?: boolean
   /** Campi da evidenziare in cima alla scheda. */
   highlight: FieldKey[]
 }
@@ -93,6 +99,7 @@ export const CATEGORIES: CategoryDef[] = [
     hasBack: true,
     mrz: false,
     expires: false,
+    multiPage: true,
     highlight: [],
   },
   {
@@ -116,6 +123,7 @@ export const CATEGORIES: CategoryDef[] = [
     hasBack: true,
     mrz: false,
     expires: true,
+    multiPage: true,
     highlight: [],
   },
 ]
