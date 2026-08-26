@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="it" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5"
+    />
+    <title>Archivio Documenti</title>
+    <meta
+      name="description"
+      content="Caveau digitale personale per documenti e credenziali: cifrato, con sblocco biometrico e OCR, interamente sul tuo dispositivo."
+    />
+    <meta name="theme-color" content="#080b14" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f4f6fb" media="(prefers-color-scheme: light)" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Archivio" />
+    <!-- Nessun dato deve trapelare tramite referrer o indicizzazione. -->
+    <meta name="referrer" content="no-referrer" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <!--
+      Nessun font remoto: l'app non fa una sola richiesta verso l'esterno, quindi
+      la tipografia usa lo stack di sistema (SF Pro, Roboto, Segoe UI).
+    -->
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+# Normalizza i fine riga: il repository conserva LF, il checkout usa la
+# convenzione della piattaforma. Evita diff spuri tra Windows, macOS e la CI.
+* text=auto eol=lf
+
+# Binari: mai toccati da conversioni di riga.
+*.png binary
+*.gz binary
+*.wasm binary
+*.pfb binary
+*.bcmap binary
+*.archbk binary

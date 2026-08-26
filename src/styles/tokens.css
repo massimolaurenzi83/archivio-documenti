@@ -1,0 +1,245 @@
+/**
+ * Design token dell'applicazione.
+ *
+ * Tutta la grafica passa da qui: un designer può ridefinire palette, tipografia,
+ * raggi e ombre senza toccare un solo componente React. I componenti non
+ * contengono mai colori letterali.
+ *
+ * Il tema scuro è il default (comunica solidità e riduce l'affaticamento visivo
+ * su schermo piccolo di notte); il tema chiaro è una ridefinizione completa
+ * degli stessi token.
+ */
+
+:root {
+  /* ---------------------------- tipografia ---------------------------- */
+  /* Stack di sistema: nessun font scaricato, nessuna richiesta di rete. */
+  --font-sans:
+    system-ui, -apple-system, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', Roboto,
+    'Helvetica Neue', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Menlo, monospace;
+
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-md: 1.0625rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 1.875rem;
+  --text-3xl: 2.375rem;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.35;
+  --leading-normal: 1.55;
+
+  --tracking-tight: -0.02em;
+  --tracking-wide: 0.04em;
+  --tracking-caps: 0.09em;
+
+  /* ------------------------------ spaziatura ---------------------------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* -------------------------------- forme ------------------------------- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+  --radius-pill: 999px;
+
+  --border-hairline: 1px;
+  --ring-width: 2px;
+
+  /* ------------------------------- movimento ----------------------------- */
+  --duration-instant: 90ms;
+  --duration-fast: 160ms;
+  --duration-base: 240ms;
+  --duration-slow: 420ms;
+  --duration-reveal: 620ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* -------------------------------- livelli ------------------------------ */
+  --z-base: 0;
+  --z-sticky: 20;
+  --z-nav: 40;
+  --z-sheet: 60;
+  --z-modal: 80;
+  --z-toast: 100;
+
+  /* ------------------------- palette: tema scuro ------------------------- */
+  --bg-canvas: #080b14;
+  --bg-elevated: #0f1421;
+  --bg-surface: #141b2b;
+  --bg-surface-hover: #1a2337;
+  --bg-sunken: #060911;
+  --bg-overlay: rgba(4, 6, 12, 0.76);
+  --bg-scrim: rgba(4, 6, 12, 0.5);
+
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
+
+  --text-primary: #f2f5fb;
+  --text-secondary: #a7b1c7;
+  --text-tertiary: #6f7b95;
+  --text-inverse: #0a0e18;
+
+  --accent: #6b8dff;
+  --accent-hover: #829eff;
+  --accent-soft: rgba(107, 141, 255, 0.14);
+  --accent-ring: rgba(107, 141, 255, 0.4);
+  --accent-gradient: linear-gradient(135deg, #7aa2ff 0%, #8b5cf6 100%);
+  --accent-gradient-soft: linear-gradient(
+    135deg,
+    rgba(122, 162, 255, 0.16) 0%,
+    rgba(139, 92, 246, 0.16) 100%
+  );
+
+  --success: #34d399;
+  --success-soft: rgba(52, 211, 153, 0.14);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.15);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.14);
+  --danger-hover: #fb8a8a;
+
+  /* Accenti per categoria: usati da `.cat-<nome>`. */
+  --cat-blue: #60a5fa;
+  --cat-indigo: #818cf8;
+  --cat-teal: #2dd4bf;
+  --cat-green: #4ade80;
+  --cat-amber: #fbbf24;
+  --cat-slate: #94a3b8;
+  --cat-rose: #fb7185;
+  --cat-violet: #c084fc;
+
+  /* Colori degli avatar dei profili familiari. */
+  --profile-0: #7aa2ff;
+  --profile-1: #2dd4bf;
+  --profile-2: #fb7185;
+  --profile-3: #fbbf24;
+  --profile-4: #c084fc;
+  --profile-5: #4ade80;
+
+  /* --------------------------------- ombre ------------------------------- */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.42);
+  --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 0 1px rgba(122, 162, 255, 0.24), 0 12px 40px rgba(70, 100, 220, 0.24);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  /* ------------------------------- struttura ----------------------------- */
+  --app-max-width: 560px;
+  --app-max-width-wide: 1080px;
+  --nav-height: 60px;
+  --header-height: 56px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  color-scheme: dark;
+}
+
+/* ---------------------------- tema chiaro ---------------------------- */
+
+:root[data-theme='light'] {
+  --bg-canvas: #f4f6fb;
+  --bg-elevated: #ffffff;
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #f0f3f9;
+  --bg-sunken: #e8ecf4;
+  --bg-overlay: rgba(24, 30, 44, 0.42);
+  --bg-scrim: rgba(24, 30, 44, 0.24);
+
+  --border-subtle: rgba(15, 23, 42, 0.07);
+  --border-default: rgba(15, 23, 42, 0.12);
+  --border-strong: rgba(15, 23, 42, 0.22);
+
+  --text-primary: #101728;
+  --text-secondary: #4a5670;
+  --text-tertiary: #7a86a0;
+  --text-inverse: #ffffff;
+
+  --accent: #3f63e0;
+  --accent-hover: #3355d4;
+  --accent-soft: rgba(63, 99, 224, 0.1);
+  --accent-ring: rgba(63, 99, 224, 0.32);
+
+  --success: #0f9d6e;
+  --success-soft: rgba(15, 157, 110, 0.12);
+  --warning: #b7791f;
+  --warning-soft: rgba(183, 121, 31, 0.13);
+  --danger: #d93a3a;
+  --danger-soft: rgba(217, 58, 58, 0.11);
+  --danger-hover: #c22f2f;
+
+  --cat-blue: #2563eb;
+  --cat-indigo: #4f46e5;
+  --cat-teal: #0d9488;
+  --cat-green: #16a34a;
+  --cat-amber: #b45309;
+  --cat-slate: #475569;
+  --cat-rose: #e11d48;
+  --cat-violet: #9333ea;
+
+  --shadow-xs: 0 1px 2px rgba(16, 23, 40, 0.06);
+  --shadow-sm: 0 2px 8px rgba(16, 23, 40, 0.07);
+  --shadow-md: 0 10px 28px rgba(16, 23, 40, 0.09);
+  --shadow-lg: 0 24px 56px rgba(16, 23, 40, 0.14);
+  --shadow-glow: 0 0 0 1px rgba(63, 99, 224, 0.2), 0 12px 36px rgba(63, 99, 224, 0.16);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+
+  color-scheme: light;
+}
+
+/* Chi non ha espresso preferenze segue il sistema, restando sul tema scuro
+   quando il sistema è scuro. */
+@media (prefers-color-scheme: light) {
+  :root[data-theme='system'] {
+    --bg-canvas: #f4f6fb;
+    --bg-elevated: #ffffff;
+    --bg-surface: #ffffff;
+    --bg-surface-hover: #f0f3f9;
+    --bg-sunken: #e8ecf4;
+    --bg-overlay: rgba(24, 30, 44, 0.42);
+    --bg-scrim: rgba(24, 30, 44, 0.24);
+    --border-subtle: rgba(15, 23, 42, 0.07);
+    --border-default: rgba(15, 23, 42, 0.12);
+    --border-strong: rgba(15, 23, 42, 0.22);
+    --text-primary: #101728;
+    --text-secondary: #4a5670;
+    --text-tertiary: #7a86a0;
+    --text-inverse: #ffffff;
+    --accent: #3f63e0;
+    --accent-hover: #3355d4;
+    --accent-soft: rgba(63, 99, 224, 0.1);
+    --accent-ring: rgba(63, 99, 224, 0.32);
+    --success: #0f9d6e;
+    --success-soft: rgba(15, 157, 110, 0.12);
+    --warning: #b7791f;
+    --warning-soft: rgba(183, 121, 31, 0.13);
+    --danger: #d93a3a;
+    --danger-soft: rgba(217, 58, 58, 0.11);
+    --shadow-sm: 0 2px 8px rgba(16, 23, 40, 0.07);
+    --shadow-md: 0 10px 28px rgba(16, 23, 40, 0.09);
+    --shadow-lg: 0 24px 56px rgba(16, 23, 40, 0.14);
+    --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    color-scheme: light;
+  }
+}

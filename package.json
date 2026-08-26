@@ -1,0 +1,32 @@
+{
+  "name": "archivio-documenti",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Caveau digitale personale per documenti: 100% locale, cifrato, con biometria e OCR",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "icons": "node scripts/generate-icons.mjs",
+    "ocr-assets": "node scripts/prepare-ocr-assets.mjs"
+  },
+  "dependencies": {
+    "idb": "^8.0.3",
+    "pdfjs-dist": "^4.10.38",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tesseract.js": "^5.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.3.0",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.11",
+    "vite-plugin-pwa": "^0.21.1"
+  },
+  "license": "MIT"
+}
