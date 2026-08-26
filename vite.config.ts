@@ -19,6 +19,24 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 12 * 1024 * 1024,
         globPatterns: ['**/*.{js,mjs,css,html,svg,png,woff2,wasm,gz}'],
         navigateFallbackDenylist: [/^\/tessdata/, /^\/tesseract/],
+        // I font standard e le cMap di pdf.js (.pfb, .bcmap) restano fuori dal
+        // precache di proposito: sono 2,3 MB che servono solo a chi apre un PDF,
+        // e appesantirebbero l'installazione per tutti. Vengono però messi in
+        // cache alla prima richiesta, così dalla seconda volta quel PDF si apre
+        // anche senza rete. Senza questa regola l'anteprima di un PDF con font
+        // non incorporati resterebbe a caricare per sempre offline.
+        runtimeCaching: [
+          {
+            urlPattern: /\/pdf\/(standard_fonts|cmaps)\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'pdfjs-risorse',
+              // 16 font più 169 cMap: il margine copre eventuali aggiunte.
+              expiration: { maxEntries: 220, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
       manifest: {
         name: 'Archivio Documenti',

@@ -57,7 +57,11 @@ tuo archivio nasce vuoto sul tuo telefono o sul tuo computer e non esce da lì.
   dell'identità.
 - **Backup cifrato** in un unico file, da salvare dove preferisci e importare su
   un altro dispositivo.
-- **PWA installabile**, funzionante offline dopo il primo caricamento.
+- **PWA installabile**, funzionante offline dopo il primo caricamento: OCR,
+  cifratura e anteprime girano senza rete. Le tabelle dei font di pdf.js fanno
+  eccezione — 2,3 MB che appesantirebbero l'installazione per tutti pur
+  servendo solo a chi apre un PDF — e vengono messe in cache alla prima
+  apertura di un PDF, restando poi disponibili anche offline.
 
 ## Come funziona la sicurezza
 
