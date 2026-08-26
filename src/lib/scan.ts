@@ -525,9 +525,38 @@ export function warpDocument(source: HTMLCanvasElement, quad: Quad): HTMLCanvasE
   return out
 }
 
-/** Carica un blob in un canvas alla risoluzione nativa. */
+/**
+ * Carica un'immagine applicando l'orientamento EXIF.
+ *
+ * Non è un dettaglio: una foto scattata col telefono porta quasi sempre un tag
+ * di orientamento, e i due modi di leggerla si comportano in modo opposto. Un
+ * `<img>` applica sempre la rotazione; `createImageBitmap` senza opzioni può
+ * restituire i pixel grezzi. Se l'anteprima mostrata è ruotata e il canvas su
+ * cui si lavora no, l'utente trascina gli angoli su un'immagine e il ritaglio
+ * avviene su un'altra: il risultato inquadra il tavolo invece del documento, e
+ * l'OCR legge il testo di traverso.
+ *
+ * Chiedere `from-image` esplicitamente allinea i due mondi.
+ */
+export async function loadOrientedBitmap(blob: Blob): Promise<ImageBitmap | HTMLImageElement> {
+  if (typeof createImageBitmap === 'function') {
+    try {
+      return await createImageBitmap(blob, { imageOrientation: 'from-image' })
+    } catch {
+      // Browser che non conoscono l'opzione: meglio senza che niente.
+      try {
+        return await createImageBitmap(blob)
+      } catch {
+        /* si prosegue col ripiego su <img> */
+      }
+    }
+  }
+  return loadViaImageElement(blob)
+}
+
+/** Carica un blob in un canvas alla risoluzione nativa, già orientato. */
 export async function blobToCanvas(blob: Blob): Promise<HTMLCanvasElement> {
-  const bitmap = await loadBitmap(blob)
+  const bitmap = await loadOrientedBitmap(blob)
   const canvas = document.createElement('canvas')
   canvas.width = bitmap.width
   canvas.height = bitmap.height
@@ -538,14 +567,11 @@ export async function blobToCanvas(blob: Blob): Promise<HTMLCanvasElement> {
   return canvas
 }
 
-async function loadBitmap(blob: Blob): Promise<ImageBitmap | HTMLImageElement> {
-  if (typeof createImageBitmap === 'function') {
-    try {
-      return await createImageBitmap(blob)
-    } catch {
-      /* Safari più vecchi: si ripiega su <img> */
-    }
-  }
+/**
+ * Ripiego per i browser senza `createImageBitmap`: un `<img>` applica da sé
+ * l'orientamento EXIF, e `drawImage` disegna l'immagine già ruotata.
+ */
+async function loadViaImageElement(blob: Blob): Promise<HTMLImageElement> {
   const url = URL.createObjectURL(blob)
   try {
     const img = new Image()

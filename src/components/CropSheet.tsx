@@ -45,6 +45,15 @@ export function CropSheet({ image, sideLabel, onConfirm, onCancel }: CropSheetPr
   const [error, setError] = useState<string | null>(null)
   const [dragging, setDragging] = useState<number | null>(null)
   const [displayScale, setDisplayScale] = useState(1)
+  /**
+   * L'anteprima è generata dal canvas, non dal file originale.
+   *
+   * È la garanzia che ciò che si vede e ciò su cui si calcola siano la stessa
+   * immagine: mostrando il file grezzo, una foto con orientamento EXIF verrebbe
+   * raddrizzata dal browser ma non dal canvas, e gli angoli trascinati
+   * finirebbero su una porzione completamente diversa della foto.
+   */
+  const [preview, setPreview] = useState<string | null>(null)
 
   const svgRef = useRef<SVGSVGElement>(null)
   const previewUrl = useRef<string | null>(null)
@@ -72,9 +81,12 @@ export function CropSheet({ image, sideLabel, onConfirm, onCancel }: CropSheetPr
           detected: Boolean(detection),
           skew: detection?.skewDegrees ?? 0,
         }
+        const previewBlob = await canvasToBlob(canvas, 'image/jpeg', 0.9)
+        if (cancelled) return
         setLoaded(next)
         setQuad(next.quad)
-        previewUrl.current = URL.createObjectURL(image)
+        previewUrl.current = URL.createObjectURL(previewBlob)
+        setPreview(previewUrl.current)
       } catch {
         if (!cancelled) setError('Immagine non leggibile.')
       }
@@ -202,7 +214,7 @@ export function CropSheet({ image, sideLabel, onConfirm, onCancel }: CropSheetPr
               ).toFixed(4)}))`,
             }}
           >
-            {previewUrl.current && <img src={previewUrl.current} alt={`Ritaglio ${sideLabel}`} />}
+            {preview && <img src={preview} alt={`Ritaglio ${sideLabel}`} />}
             <svg
               ref={svgRef}
               className="crop-overlay"

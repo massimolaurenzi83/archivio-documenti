@@ -12,6 +12,7 @@
  *      che Tesseract "corregga" i caratteri `<` in lettere.
  */
 import { createWorker, type Worker } from 'tesseract.js'
+import { loadOrientedBitmap } from './scan'
 
 const BASE = import.meta.env.BASE_URL || '/'
 const asset = (p: string) => `${BASE.replace(/\/$/, '')}/${p}`
@@ -150,13 +151,16 @@ export async function preprocess(source: Blob): Promise<HTMLCanvasElement> {
   return canvas
 }
 
+/*
+ * L'orientamento EXIF passa dal caricatore condiviso in `scan.ts`: una foto
+ * ruotata letta come pixel grezzi verrebbe passata a Tesseract di traverso, e
+ * il riconoscimento del testo fallirebbe quasi del tutto.
+ */
 async function blobToBitmap(blob: Blob): Promise<ImageBitmap | HTMLImageElement> {
-  if (typeof createImageBitmap === 'function') {
-    try {
-      return await createImageBitmap(blob)
-    } catch {
-      /* Safari vecchi: fallback su <img> */
-    }
+  try {
+    return await loadOrientedBitmap(blob)
+  } catch {
+    /* si prosegue col ripiego locale */
   }
   const url = URL.createObjectURL(blob)
   try {
