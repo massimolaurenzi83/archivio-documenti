@@ -6,6 +6,7 @@
  */
 import { useMemo } from 'react'
 import { CATEGORIES } from '../lib/categories'
+import { buildReminders, deliverReminders } from '../lib/calendar'
 import { expiryInfo } from '../lib/format'
 import type { CategoryId, ArchivioDocument } from '../types'
 import { useArchivio } from '../state/ArchivioProvider'
@@ -30,7 +31,7 @@ export function Dashboard({
   onGoToDocuments,
   onGoToFamily,
 }: DashboardProps) {
-  const { snapshot } = useArchivio()
+  const { snapshot, requireAuth, toast } = useArchivio()
   const warningDays = snapshot.settings.expiryWarningDays
 
   const { expiring, expired, counts } = useMemo(() => {
@@ -49,6 +50,21 @@ export function Dashboard({
   }, [documents, warningDays])
 
   const attention = [...expired, ...expiring]
+
+  /** Un unico file .ics per tutti i documenti con scadenza nota. */
+  async function remindAll() {
+    const ok = await requireAuth('Crea i promemoria di scadenza nel calendario.')
+    if (!ok) return
+    const result = buildReminders(documents, { anonymous: snapshot.settings.calendarAnonymous })
+    if (!result) {
+      toast('Nessun documento con data di scadenza.', 'error')
+      return
+    }
+    const outcome = await deliverReminders(result)
+    const quanti = `${result.count} ${result.count === 1 ? 'promemoria' : 'promemoria'}`
+    if (outcome === 'downloaded') toast(`${quanti} nel file .ics: aprilo per aggiungerli al calendario.`, 'info')
+    else if (outcome === 'shared') toast(`${quanti} inviati al calendario.`, 'success')
+  }
 
   return (
     <>
@@ -105,8 +121,14 @@ export function Dashboard({
       {attention.length > 0 && (
         <section>
           <div className="section-title">
-            <h2 style={{ fontSize: 'var(--text-md)' }}>Da controllare</h2>
-            <span className="badge badge-warning">{attention.length}</span>
+            <div className="row" style={{ gap: 'var(--space-2)' }}>
+              <h2 style={{ fontSize: 'var(--text-md)' }}>Da controllare</h2>
+              <span className="badge badge-warning">{attention.length}</span>
+            </div>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={remindAll}>
+              <Icon name="calendar" size={15} />
+              Nel calendario
+            </button>
           </div>
           <ul className="doc-list">
             {attention.slice(0, 4).map((doc, index) => (

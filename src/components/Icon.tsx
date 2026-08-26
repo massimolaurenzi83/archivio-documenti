@@ -56,6 +56,7 @@ export type IconName =
   | 'refresh'
   | 'info'
   | 'clock'
+  | 'calendar'
   | 'flip'
   | 'scan'
 
@@ -326,6 +327,20 @@ const GLYPHS: Record<IconName, ReactNode> = {
     <>
       <circle cx="12" cy="12" r="8.6" />
       <path d="M12 7.4V12l3.2 2.1" />
+    </>
+  ),
+
+  // Calendario: corpo, testata piena (come sui calendari da parete) e due
+  // anelli. Il punto segna il giorno, ed è un cerchio pieno come tutti i punti
+  // del set.
+  calendar: (
+    <>
+      <rect x="3.6" y="5.4" width="16.8" height="15" rx="2.4" />
+      <path d="M3.6 10h16.8" />
+      <path d="M8.4 3.6v3.4M15.6 3.6v3.4" />
+      <Dot cx={8.6} cy={14.2} />
+      <Dot cx={12} cy={14.2} />
+      <Dot cx={15.4} cy={14.2} />
     </>
   ),
 

@@ -187,6 +187,17 @@ export function SettingsView() {
           </SettingRow>
 
           <SettingRow
+            title="Promemoria di calendario anonimi"
+            description="Nel promemoria scrivi solo il tipo di documento, senza il titolo che gli hai dato. Utile se il calendario è condiviso."
+          >
+            <Switch
+              checked={settings.calendarAnonymous}
+              onChange={(v) => update({ calendarAnonymous: v })}
+              label="Promemoria di calendario anonimi"
+            />
+          </SettingRow>
+
+          <SettingRow
             title="Documenti dei familiari"
             description="Mostra la sezione con i profili di moglie, figli o genitori."
           >

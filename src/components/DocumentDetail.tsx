@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { category } from '../lib/categories'
 import { DATE_FIELDS, FIELD_LABELS, FIELD_ORDER } from '../lib/extract'
+import { buildReminders, deliverReminders } from '../lib/calendar'
 import { expiryInfo, formatIsoDate, formatTimestamp } from '../lib/format'
 import { canvasToBlob, renderPdfPage } from '../lib/pdf'
 import {
@@ -128,6 +129,26 @@ export function DocumentDetail({ doc, onClose, ownerName }: DocumentDetailProps)
     const outcome = await shareText(field.value, FIELD_LABELS[field.key])
     if (outcome === 'copied') toast('Copiato negli appunti.', 'success')
     else if (outcome === 'shared') toast('Condiviso.', 'success')
+  }
+
+  /**
+   * Il promemoria esce dal caveau, quindi passa dalla riconferma come una
+   * condivisione: contiene comunque solo titolo (o categoria) e data.
+   */
+  async function addToCalendar() {
+    const ok = await requireAuth('Crea un promemoria di scadenza nel calendario.')
+    if (!ok) return
+    const result = buildReminders([doc], {
+      anonymous: snapshot.settings.calendarAnonymous,
+      ownerName: ownerName,
+    })
+    if (!result) {
+      toast('Questo documento non ha una data di scadenza.', 'error')
+      return
+    }
+    const outcome = await deliverReminders(result)
+    if (outcome === 'downloaded') toast('File .ics salvato: aprilo per aggiungerlo al calendario.', 'info')
+    else if (outcome === 'shared') toast('Promemoria inviato al calendario.', 'success')
   }
 
   async function saveFields(next: ExtractedField[]) {
@@ -349,6 +370,12 @@ export function DocumentDetail({ doc, onClose, ownerName }: DocumentDetailProps)
               <Icon name="share" size={18} />
               Condividi documento
             </button>
+            {expiry.state !== 'none' && (
+              <button type="button" className="btn btn-secondary btn-block" onClick={addToCalendar}>
+                <Icon name="calendar" size={17} />
+                Ricordami la scadenza
+              </button>
+            )}
             <div className="row" style={{ gap: 'var(--space-2)' }}>
               <button
                 type="button"

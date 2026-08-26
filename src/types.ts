@@ -98,6 +98,12 @@ export interface Settings {
   expiryWarningDays: number
   /** Esegui l'OCR automaticamente al caricamento. */
   ocrAutoRun: boolean
+  /**
+   * Nei promemoria di calendario usa solo il tipo di documento, senza il titolo
+   * che l'utente gli ha dato. Serve a chi sincronizza il calendario con un
+   * account condiviso.
+   */
+  calendarAnonymous: boolean
   theme: 'dark' | 'light' | 'system'
 }
 
@@ -107,6 +113,7 @@ export const DEFAULT_SETTINGS: Settings = {
   requireAuthPerDocument: true,
   expiryWarningDays: 60,
   ocrAutoRun: true,
+  calendarAnonymous: false,
   theme: 'dark',
 }
 

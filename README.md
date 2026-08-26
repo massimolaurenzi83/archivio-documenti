@@ -29,7 +29,13 @@ tuo archivio nasce vuoto sul tuo telefono o sul tuo computer e non esce da lì.
   scansione è venuto male. Questi campi sono marcati come *verificati*.
 - **Categorie** predefinite: carta d'identità, passaporto, tessera sanitaria,
   codice fiscale, patente, documenti generali, password/credenziali, altro.
-- **Avvisi di scadenza** con preavviso configurabile.
+- **Avvisi di scadenza** con preavviso configurabile, e **promemoria nel
+  calendario** del telefono con due allarmi (60 e 7 giorni prima). Il perché di
+  questo giro: una notifica push richiederebbe un server, e questa app non ne
+  ha. Il calendario invece notifica in modo affidabile ed è già sul dispositivo.
+  Il file `.ics` contiene solo titolo e data — mai numeri o dati estratti — e
+  un'opzione lo rende anonimo (solo il tipo di documento) per chi sincronizza il
+  calendario con un account condiviso.
 - **Profili familiari** separati (moglie, figli, genitori), attivabili e
   disattivabili. I documenti di un familiare non compaiono mai mescolati ai tuoi.
 - **Condivisione** verso le app native (WhatsApp, Mail, Telegram, AirDrop…) del
@@ -127,6 +133,7 @@ src/
     mrz.ts         parser MRZ TD1/TD2/TD3 con cifre di controllo
     extract.ts     estrazione campi da documenti italiani (con validazione CF)
     backup.ts      contenitore .archbk cifrato
+    calendar.ts    promemoria iCalendar (RFC 5545) con allarmi
     pdf.ts         anteprime e rasterizzazione PDF con pdf.js
     share.ts       Web Share API e appunti
   components/      una classe CSS per componente, nessun colore letterale
