@@ -1850,3 +1850,41 @@ button.list-row:hover {
   /* Recupera il margine ottico: il glifo è più piccolo dell'area di tocco. */
   margin: calc(var(--space-1) * -1) calc(var(--space-2) * -1) 0 0;
 }
+
+/* ====================== avvisi sulla sopravvivenza dati ================== */
+
+.safety-card {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  border: var(--border-hairline) solid;
+}
+
+.safety-card-danger {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 38%, transparent);
+  color: var(--danger);
+}
+
+.safety-card-warning {
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+  border-color: color-mix(in srgb, var(--warning) 34%, transparent);
+  color: var(--warning);
+}
+
+.safety-title {
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-base);
+  margin-bottom: var(--space-1);
+}
+
+/* Il corpo torna al colore normale: il colore d'allarme resta al titolo e
+   all'icona, altrimenti il testo diventa faticoso da leggere. */
+.safety-text {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  margin-bottom: var(--space-3);
+}

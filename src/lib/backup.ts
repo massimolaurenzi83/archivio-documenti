@@ -21,6 +21,7 @@
  * I binari restano binari: nessun base64, così un caveau da 200 MB non fa
  * esplodere la memoria del telefono durante l'esportazione.
  */
+import { canShareFiles, downloadBlob, shareFiles } from './share'
 import { deriveKeyFromPin, encryptBytes, decryptBytes, newSalt, PBKDF2_ITERATIONS, toBase64, fromBase64 } from './crypto'
 import { archivio } from './archivio'
 import type { Profile, Settings, ArchivioDocument } from '../types'
@@ -312,4 +313,27 @@ function concat(parts: Uint8Array[]): Uint8Array {
     offset += part.byteLength
   }
   return out
+}
+
+/**
+ * Consegna il file di backup, garantendo che esista.
+ *
+ * Il foglio di condivisione è comodo per mandarlo su Drive, ma può rifiutarsi
+ * (`navigator.share` pretende un gesto recente, e qui in mezzo ci sono la
+ * riconferma d'identità e la cifratura) o essere chiuso per sbaglio. In ogni
+ * caso diverso dall'invio riuscito il file viene salvato sul dispositivo: un
+ * backup che non si materializza è peggio di nessun backup, perché toglie
+ * all'utente la ragione di rifarlo.
+ */
+export async function deliverBackup(
+  blob: Blob,
+  filename: string,
+): Promise<'shared' | 'downloaded'> {
+  const file = new File([blob], filename, { type: 'application/octet-stream' })
+  if (canShareFiles([file])) {
+    const outcome = await shareFiles([file], { title: 'Backup Archivio Documenti' })
+    if (outcome === 'shared') return 'shared'
+  }
+  downloadBlob(blob, filename)
+  return 'downloaded'
 }

@@ -12,6 +12,7 @@ import { useArchivio } from './state/ArchivioProvider'
 import { AddDocument } from './components/AddDocument'
 import { AuthGate } from './components/AuthGate'
 import { BatchImport } from './components/BatchImport'
+import { ExportSheet } from './components/BackupPanel'
 import { Dashboard } from './components/Dashboard'
 import { DocumentDetail } from './components/DocumentDetail'
 import { DocumentList } from './components/DocumentList'
@@ -31,6 +32,7 @@ export function App() {
   const [openDoc, setOpenDoc] = useState<ArchivioDocument | null>(null)
   const [adding, setAdding] = useState<{ category?: CategoryId } | null>(null)
   const [batch, setBatch] = useState(false)
+  const [backup, setBackup] = useState(false)
   const [filterCategory, setFilterCategory] = useState<CategoryId | null>(null)
   const [onboarding, setOnboarding] = useState(false)
 
@@ -53,6 +55,7 @@ export function App() {
       setOpenDoc(null)
       setAdding(null)
       setBatch(false)
+      setBackup(false)
     }
   }, [status])
 
@@ -157,6 +160,7 @@ export function App() {
             onOpen={setOpenDoc}
             onAdd={(cat) => setAdding({ category: cat })}
             onAddMany={() => setBatch(true)}
+            onOpenBackup={() => setBackup(true)}
             onGoToDocuments={(cat) => {
               setFilterCategory(cat ?? null)
               setTab('documents')
@@ -243,6 +247,8 @@ export function App() {
           onClose={() => setOpenDoc(null)}
         />
       )}
+
+      {backup && <ExportSheet onClose={() => setBackup(false)} />}
 
       {batch && activeProfile && (
         <BatchImport

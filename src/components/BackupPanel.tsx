@@ -8,6 +8,7 @@
 import { useState } from 'react'
 import {
   backupFilename,
+  deliverBackup,
   exportBackup,
   importBackup,
   inspectBackup,
@@ -16,7 +17,7 @@ import {
   type ExportProgress,
   type ImportResult,
 } from '../lib/backup'
-import { downloadBlob, shareFiles, canShareFiles } from '../lib/share'
+import { archivio } from '../lib/archivio'
 import { formatBytes, formatTimestamp } from '../lib/format'
 import { useArchivio } from '../state/ArchivioProvider'
 import { Icon } from './Icon'
@@ -43,14 +44,15 @@ export function ExportSheet({ onClose }: { onClose: () => void }) {
     try {
       const blob = await exportBackup(passphrase, setProgress)
       const filename = backupFilename()
-      const file = new File([blob], filename, { type: 'application/octet-stream' })
-      // Su mobile il foglio di condivisione è il modo naturale per mandarlo su Drive.
-      if (canShareFiles([file])) {
-        await shareFiles([file], { title: 'Backup Archivio Documenti' })
-      } else {
-        downloadBlob(blob, filename)
-      }
-      toast(`Backup creato (${formatBytes(blob.size)}).`, 'success')
+      const esito = await deliverBackup(blob, filename)
+      // Da qui in poi l'app sa quali documenti sono al sicuro e quali no.
+      await archivio.recordBackup(passphrase)
+      toast(
+        esito === 'shared'
+          ? `Backup inviato (${formatBytes(blob.size)}). Verifica che sia arrivato a destinazione.`
+          : `Backup salvato tra i file scaricati: ${filename} (${formatBytes(blob.size)}).`,
+        'success',
+      )
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Esportazione non riuscita.')

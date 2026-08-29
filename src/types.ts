@@ -120,6 +120,17 @@ export interface Settings {
   calendarAnonymous: boolean
   /** Campi mostrati nella sezione "Dati rapidi" della dashboard. */
   pinnedFields: PinnedField[]
+  /** Quando è stato creato l'ultimo backup, in millisecondi. */
+  lastBackupAt?: number
+  /**
+   * Passphrase dell'ultimo backup, per poterne rifare uno con un tocco solo.
+   *
+   * Vive dentro le impostazioni cifrate, quindi è protetta dalla stessa chiave
+   * dei documenti: chi potesse leggerla avrebbe già i documenti. In cambio il
+   * backup smette di essere un modulo da compilare e diventa un gesto, che è
+   * l'unica ragione per cui la gente lo fa davvero.
+   */
+  backupPassphrase?: string
   /**
    * L'app ha già proposto una volta il codice fiscale come dato rapido. Serve a
    * non riproporlo a chi lo ha volutamente rimosso.

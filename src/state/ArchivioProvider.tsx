@@ -61,6 +61,8 @@ const EMPTY: ArchivioSnapshot = {
   settings: DEFAULT_SETTINGS,
   methods: [],
   error: null,
+  storagePersisted: false,
+  pendingBackupCount: 0,
 }
 
 export function ArchivioProvider({ children }: { children: ReactNode }) {

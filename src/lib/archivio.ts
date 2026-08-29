@@ -62,6 +62,16 @@ export interface ArchivioSnapshot {
   methods: { id: string; kind: 'biometric' | 'pin'; label: string; createdAt: number }[]
   /** Ultimo errore leggibile, azzerato dal chiamante. */
   error: string | null
+  /**
+   * Il browser ha promesso di non sfrattare i dati di questo sito.
+   *
+   * `false` significa che l'archivio può essere cancellato senza preavviso
+   * quando il dispositivo ha bisogno di spazio: è il rischio più concreto che
+   * corre questa app, e l'utente deve poterlo vedere.
+   */
+  storagePersisted: boolean
+  /** Documenti creati o modificati dopo l'ultimo backup. */
+  pendingBackupCount: number
 }
 
 /** L'etichetta PRF: cambiarla invaliderebbe tutte le chiavi biometriche esistenti. */
@@ -88,6 +98,7 @@ class ArchivioService {
   private documents = new Map<string, ArchivioDocument>()
   private profiles = new Map<string, Profile>()
   private settings: Settings = { ...DEFAULT_SETTINGS }
+  private storagePersisted = false
   private keys: WrappedKeyRecord[] = []
   private error: string | null = null
   private listeners = new Set<(s: ArchivioSnapshot) => void>()
@@ -117,6 +128,8 @@ class ArchivioService {
         createdAt: k.createdAt,
       })),
       error: this.error,
+      storagePersisted: this.storagePersisted,
+      pendingBackupCount: this.countPendingBackup(),
     }
   }
 
@@ -319,6 +332,22 @@ class ArchivioService {
     this.lastVerifiedAt = Date.now()
     await this.loadAll()
     await this.suggestInitialPins()
+    /*
+     * La persistenza va richiesta a ogni sblocco, non una volta sola.
+     *
+     * Al primo avvio il browser quasi sempre rifiuta: concede lo stato
+     * persistente solo a siti con cui l'utente ha confidenza — installati sulla
+     * schermata iniziale, o usati spesso. Chiedendo solo allora, il "no" era
+     * definitivo e i dati restavano sfrattabili per sempre. Chiedere ogni volta
+     * costa nulla ed è ciò che trasforma il "no" iniziale in un "sì" appena
+     * l'app viene installata.
+     */
+    void requestPersistentStorage()
+      .then((ok) => {
+        this.storagePersisted = ok
+        this.emit()
+      })
+      .catch(() => undefined)
     this.status = 'unlocked'
     this.error = null
     this.emit()
@@ -503,6 +532,26 @@ class ArchivioService {
     await deleteEncrypted('profiles', id)
     this.profiles.delete(id)
     this.emit()
+  }
+
+  /* ------------------------------- backup -------------------------------- */
+
+  /**
+   * Documenti creati o modificati dopo l'ultimo backup.
+   *
+   * È il numero che conta davvero: «ultimo backup 40 giorni fa» non dice se hai
+   * qualcosa da perdere, «3 documenti non sono in nessun backup» sì.
+   */
+  private countPendingBackup(): number {
+    const last = this.settings.lastBackupAt ?? 0
+    let count = 0
+    for (const doc of this.documents.values()) if (doc.updatedAt > last) count++
+    return count
+  }
+
+  /** Registra un backup riuscito, con la passphrase per poterlo rifare al volo. */
+  async recordBackup(passphrase: string): Promise<void> {
+    await this.updateSettings({ lastBackupAt: Date.now(), backupPassphrase: passphrase })
   }
 
   /* --------------------------- dati rapidi (pin) ------------------------- */

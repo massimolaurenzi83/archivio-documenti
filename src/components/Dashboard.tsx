@@ -13,6 +13,7 @@ import { useArchivio } from '../state/ArchivioProvider'
 import { Icon } from './Icon'
 import { DocumentCard } from './DocumentList'
 import { QuickFields } from './QuickFields'
+import { SafetyBanner } from './SafetyBanner'
 import { EmptyState } from './ui'
 
 export interface DashboardProps {
@@ -22,6 +23,8 @@ export interface DashboardProps {
   onAdd: (category?: CategoryId) => void
   /** Apre il caricamento in blocco. */
   onAddMany: () => void
+  /** Apre il foglio di esportazione del backup. */
+  onOpenBackup: () => void
   onGoToDocuments: (category?: CategoryId) => void
   onGoToFamily: () => void
 }
@@ -32,6 +35,7 @@ export function Dashboard({
   onOpen,
   onAdd,
   onAddMany,
+  onOpenBackup,
   onGoToDocuments,
   onGoToFamily,
 }: DashboardProps) {
@@ -86,6 +90,8 @@ export function Dashboard({
           </span>
         </div>
       </section>
+
+      <SafetyBanner onOpenBackup={onOpenBackup} />
 
       <QuickFields />
 

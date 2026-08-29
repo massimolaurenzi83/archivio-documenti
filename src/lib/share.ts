@@ -27,7 +27,8 @@ export async function shareFiles(
       return 'shared'
     } catch (err) {
       if (isAbort(err)) return 'cancelled'
-      // Alcuni browser dichiarano il supporto e poi falliscono: ripieghiamo.
+      // Qualunque altro errore (permesso negato, supporto dichiarato ma
+      // inesistente) non deve far sparire il file: si salva sul dispositivo.
     }
   }
   for (const file of files) downloadBlob(file, file.name)
@@ -91,8 +92,18 @@ export function downloadBlob(blob: Blob, filename: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 30_000)
 }
 
+/**
+ * Solo `AbortError` significa «l'utente ha annullato».
+ *
+ * `NotAllowedError` è tutt'altro: il browser rifiuta la condivisione, quasi
+ * sempre perché `navigator.share()` esige un gesto dell'utente ancora "fresco",
+ * e nell'app ogni condivisione arriva dopo la riconferma d'identità e qualche
+ * secondo di cifratura. Trattarlo come un annullamento faceva saltare il
+ * salvataggio di ripiego: l'utente credeva di aver esportato il backup e sul
+ * telefono non c'era alcun file.
+ */
 function isAbort(err: unknown): boolean {
-  return err instanceof DOMException && (err.name === 'AbortError' || err.name === 'NotAllowedError')
+  return err instanceof DOMException && err.name === 'AbortError'
 }
 
 /** Nome file leggibile e sicuro per il filesystem. */
