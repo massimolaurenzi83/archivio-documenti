@@ -13,6 +13,7 @@ import { AddDocument } from './components/AddDocument'
 import { AuthGate } from './components/AuthGate'
 import { BatchImport } from './components/BatchImport'
 import { ExportSheet } from './components/BackupPanel'
+import { useBackHandler } from './lib/backNavigation'
 import { Dashboard } from './components/Dashboard'
 import { DocumentDetail } from './components/DocumentDetail'
 import { DocumentList } from './components/DocumentList'
@@ -28,6 +29,13 @@ type Tab = 'home' | 'documents' | 'family' | 'settings'
 export function App() {
   const { snapshot } = useArchivio()
   const [tab, setTab] = useState<Tab>('home')
+
+  /*
+   * Dalle schede diverse dalla Home il gesto indietro riporta alla Home invece
+   * di uscire dall'applicazione. A Home, senza fogli aperti, l'indietro esce:
+   * è ciò che Android si aspetta da una schermata di primo livello.
+   */
+  useBackHandler(tab !== 'home', () => setTab('home'))
   const [activeProfileId, setActiveProfileId] = useState(SELF_PROFILE_ID)
   const [openDoc, setOpenDoc] = useState<ArchivioDocument | null>(null)
   const [adding, setAdding] = useState<{ category?: CategoryId } | null>(null)
