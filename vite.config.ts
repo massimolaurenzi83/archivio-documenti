@@ -6,7 +6,17 @@ import { VitePWA } from 'vite-plugin-pwa'
 // GitHub Pages. In locale resta '/'.
 const base = process.env.VITE_BASE ?? '/'
 
+/*
+ * Etichetta della build, visibile in Impostazioni.
+ *
+ * Serve a rispondere senza congetture alla domanda «il telefono sta usando la
+ * versione aggiornata?», che con un'app installata e un service worker non ha
+ * una risposta ovvia.
+ */
+const BUILD_ID = new Date().toISOString().slice(0, 16).replace('T', ' ')
+
 export default defineConfig({
+  define: { __BUILD_ID__: JSON.stringify(BUILD_ID) },
   base,
   plugins: [
     react(),

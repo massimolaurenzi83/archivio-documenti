@@ -25,7 +25,14 @@ export function SafetyBanner({ onOpenBackup }: { onOpenBackup: () => void }) {
   const passphrase = settings.backupPassphrase
   const mostraBackup = documents.length > 0 && pendingBackupCount > 0
 
-  if (storagePersisted && !mostraBackup) return null
+  /*
+   * Dove l'API non esiste (Safari su iOS) non c'è nulla da attivare, e mostrare
+   * un allarme che nessun pulsante può spegnere insegna solo a ignorarlo.
+   */
+  const puoChiedereProtezione = typeof navigator.storage?.persist === 'function'
+  const mostraStorage = puoChiedereProtezione && !storagePersisted
+
+  if (!mostraStorage && !mostraBackup) return null
 
   async function proteggi() {
     const ok = await requestPersistentStorage()
@@ -74,7 +81,7 @@ export function SafetyBanner({ onOpenBackup }: { onOpenBackup: () => void }) {
 
   return (
     <section className="stack-sm">
-      {!storagePersisted && (
+      {mostraStorage && (
         <div className="safety-card safety-card-danger">
           <Icon name="alert" size={20} />
           <div className="grow">

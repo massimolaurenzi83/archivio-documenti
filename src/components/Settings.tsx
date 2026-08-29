@@ -276,6 +276,10 @@ export function SettingsView() {
             }
           />
           <SettingRow
+            title="Versione installata"
+            description={`Build ${__BUILD_ID__} (UTC). Se non corrisponde all'ultima pubblicata, chiudi e riapri l'app per aggiornarla.`}
+          />
+          <SettingRow
             title="Archiviazione persistente"
             description={
               persisted
