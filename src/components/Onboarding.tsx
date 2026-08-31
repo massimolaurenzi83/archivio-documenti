@@ -10,9 +10,10 @@ import { probeBiometricSupport, type BiometricSupport } from '../lib/webauthn'
 import { useArchivio } from '../state/ArchivioProvider'
 import { Icon } from './Icon'
 import { PinPad } from './PinPad'
+import { ImportSheet } from './BackupPanel'
 import { StrengthMeter } from './ui'
 
-type Step = 'intro' | 'method' | 'pin' | 'pin-confirm' | 'backup-pin'
+type Step = 'intro' | 'method' | 'pin' | 'pin-confirm' | 'backup-pin' | 'restore'
 
 export function Onboarding({ onDone }: { onDone: () => void }) {
   const { toast } = useArchivio()
@@ -20,6 +21,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
   const [support, setSupport] = useState<BiometricSupport | null>(null)
   const [firstPin, setFirstPin] = useState('')
   const [busy, setBusy] = useState(false)
+  const [importing, setImporting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -64,11 +66,21 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
       if (archivio.isUnlocked()) {
         await archivio.setPin(pin)
         toast('PIN di riserva attivo.', 'success')
+        onDone()
       } else {
         await archivio.initializeWithPin(pin)
         toast('Caveau creato su questo dispositivo.', 'success')
+        /*
+         * Il ripristino va offerto qui, non solo tra le impostazioni.
+         *
+         * Chi arriva a questa schermata dopo aver perso i dati - il browser che
+         * cancella i dati dei siti, un telefono nuovo - non ha modo di sapere
+         * che un backup si può reimportare, e ricomincia da zero pur avendo una
+         * copia. L'importazione richiede un caveau già inizializzato, perché
+         * serve la chiave: per questo il passaggio viene dopo e non prima.
+         */
+        setStep('restore')
       }
-      onDone()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Impostazione del PIN non riuscita.')
       archivio.clearError()
@@ -250,6 +262,48 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
             }}
           />
         </>
+      )}
+
+      {step === 'restore' && (
+        <>
+          <div className="onboarding-hero">
+            <span className="lock-shield">
+              <Icon name="check" size={40} />
+            </span>
+            <h1 style={{ fontSize: 'var(--text-2xl)' }}>Caveau creato</h1>
+            <p className="onboarding-lede">
+              Se hai un file di backup — da un altro dispositivo, o da prima di una
+              cancellazione — puoi ripristinarlo adesso.
+            </p>
+          </div>
+
+          <div className="stack-sm">
+            <button
+              type="button"
+              className="btn btn-secondary btn-lg btn-block"
+              onClick={() => setImporting(true)}
+            >
+              <Icon name="upload" size={18} />
+              Ripristina da un backup
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary btn-lg btn-block"
+              onClick={onDone}
+            >
+              Inizia da zero
+            </button>
+          </div>
+        </>
+      )}
+
+      {importing && (
+        <ImportSheet
+          onClose={() => {
+            setImporting(false)
+            onDone()
+          }}
+        />
       )}
 
       {step === 'backup-pin' && (

@@ -81,6 +81,12 @@ Va detto con chiarezza:
 - **Cancellazione dei dati da parte del browser.** Senza archiviazione
   persistente concessa (Impostazioni → Attiva) un browser sotto pressione di
   spazio può eliminare IndexedDB. Il backup è l'unica difesa.
+- **«Cancella dati di navigazione».** L'archiviazione persistente *non* protegge
+  da questa: per la specifica significa «il browser non cancella senza il
+  consenso dell'utente», e quel pulsante è il consenso. Cancellare i cookie e i
+  dati dei siti elimina documenti e chiavi, anche con la protezione attiva. È lo
+  scenario in cui il file di backup non è una precauzione ma l'unica copia
+  esistente.
 - **PIN debole.** Quattro cifre restano quattro cifre: PBKDF2 rallenta un
   attacco, non lo rende impossibile per chi ha copiato il database. Con dati
   davvero sensibili, usa una password alfanumerica.

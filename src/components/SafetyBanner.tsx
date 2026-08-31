@@ -37,7 +37,10 @@ export function SafetyBanner({ onOpenBackup }: { onOpenBackup: () => void }) {
   async function proteggi() {
     const ok = await requestPersistentStorage()
     if (ok) {
-      toast('Archivio protetto: il browser non lo cancellerà per fare spazio.', 'success')
+      toast(
+        'Protetto dalla cancellazione automatica. Resta però esposto a «Cancella dati di navigazione»: per quella serve un backup.',
+        'success',
+      )
       return
     }
     toast(
@@ -110,7 +113,7 @@ export function SafetyBanner({ onOpenBackup }: { onOpenBackup: () => void }) {
             <p className="safety-text">
               {settings.lastBackupAt
                 ? `Ultimo backup: ${formatTimestamp(settings.lastBackupAt)}.`
-                : 'Non hai ancora mai creato un backup: se perdi il telefono, i documenti non sono recuperabili.'}
+                : 'Non hai ancora mai creato un backup. Senza, basta un «cancella dati di navigazione» o un telefono smarrito per perdere tutto senza rimedio.'}
             </p>
             <button
               type="button"

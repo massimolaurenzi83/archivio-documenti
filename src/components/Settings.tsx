@@ -283,7 +283,7 @@ export function SettingsView() {
             title="Archiviazione persistente"
             description={
               persisted
-                ? 'Attiva: il browser non cancellerà i documenti per liberare spazio.'
+                ? 'Attiva: il browser non cancellerà i documenti per liberare spazio. Non protegge però da «Cancella dati di navigazione»: quella cancella tutto, e solo un backup permette di recuperare.'
                 : 'Non attiva: in caso di spazio esaurito il browser potrebbe eliminare i dati.'
             }
           >
